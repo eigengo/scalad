@@ -20,11 +20,8 @@ resolvers ++= Seq("sbt-idea-repo" at "http://mpeltonen.github.com/maven/",
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "0.11.0")
 
 
-//libraryDependencies ++= Seq(
-//  "org.scala-tools.testing" %% "scalacheck" % "1.9", 
-//  "org.scala-tools.testing" % "test-interface" % "0.5", 
-//)
-
+ libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.3"
+ 
 /** Compilation */
 javacOptions ++= Seq("-Xmx1812m", "-Xms512m", "-Xss4m")
 
