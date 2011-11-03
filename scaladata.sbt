@@ -20,8 +20,10 @@ resolvers ++= Seq("sbt-idea-repo" at "http://mpeltonen.github.com/maven/",
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "0.11.0")
 
 
- libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.3"
- 
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.3"
+
+libraryDependencies += "org.neo4j" %% "neo4j" % "1.4.2"
+
 /** Compilation */
 javacOptions ++= Seq("-Xmx1812m", "-Xms512m", "-Xss4m")
 
