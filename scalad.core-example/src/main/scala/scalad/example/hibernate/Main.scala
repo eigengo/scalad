@@ -1,4 +1,4 @@
-package org.cakesolutions.scaladata.example.hibernate
+package scalad.example.hibernate
 
 import javax.persistence.Persistence
 import scalad.example.User
@@ -28,12 +28,14 @@ object Main {
     println(users)
 
     val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
-    val firstTwo = jpa.select2(m1)
+    val firstTwo = jpa.selector(m1)
     println(firstTwo("username" like "a2%"))
 
+    jpa.select(one[User])
+    jpa.selectThat(one[User])("username" like "B")
 
-    val usersWhose = jpa.select2(head[User])
-    println( usersWhose("username" like "a1%") )
+    val usersWhose = jpa.selectThat(head[User])("username" like "a1%")
+    println(usersWhose)
   }
 
 }
