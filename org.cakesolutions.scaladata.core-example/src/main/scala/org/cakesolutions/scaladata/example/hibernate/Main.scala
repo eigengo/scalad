@@ -2,7 +2,7 @@ package org.cakesolutions.scaladata.example.hibernate
 
 import javax.persistence.Persistence
 import org.cakesolutions.scaladata.example.User
-import org.cakesolutions.scaladata.{QueryBuilder, Query, ScalaData, JPA}
+import org.cakesolutions.scaladata.{ScalaData, JPA}
 
 /**
  * @author janmachacek
