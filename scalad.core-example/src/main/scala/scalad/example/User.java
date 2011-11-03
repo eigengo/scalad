@@ -1,4 +1,4 @@
-package org.cakesolutions.scaladata.example;
+package scalad.example;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

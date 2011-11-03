@@ -1,9 +1,7 @@
 package org.cakesolutions.scaladata.example.hibernate
 
 import javax.persistence.Persistence
-import org.cakesolutions.scaladata.example.User
-import org.cakesolutions.scaladata.{ScalaData, JPA}
-
+import scalad.example.User
 /**
  * @author janmachacek
  */
@@ -12,7 +10,8 @@ object Main {
   import scalaz.IterV._
   import scalaz._
   import Scalaz._
-  import ScalaData._
+  import scalad._
+  import Scalad._
 
   def main(args: Array[String]) {
     val entityManagerFactory = Persistence.createEntityManagerFactory("org.cakesolutions.scaladata.core.example")
@@ -29,11 +28,11 @@ object Main {
     println(users)
 
     val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
-    val firstTwo = jpa.s2(m1)
+    val firstTwo = jpa.select2(m1)
     println(firstTwo("username" like "a2%"))
 
 
-    val usersWhose = jpa.s2(head[User])
+    val usersWhose = jpa.select2(head[User])
     println( usersWhose("username" like "a1%") )
   }
 

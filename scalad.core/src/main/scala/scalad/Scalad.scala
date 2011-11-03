@@ -1,14 +1,11 @@
-package org.cakesolutions.scaladata
+package scalad
 
 import annotation.tailrec
-import scalaz.{IterV, Enumerator}
-import scalaz.IterV.{Cont, Done}
-import scalaz.IterV.El._
 
 /**
  * @author janmachacek
  */
-object ScalaData {
+object Scalad {
 
   import scalaz.IterV._
   import scalaz._

@@ -1,4 +1,4 @@
-package org.cakesolutions.scaladata
+package scalad
 
 /**
  * @author janmachacek

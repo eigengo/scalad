@@ -1,7 +1,6 @@
-package org.cakesolutions.scaladata
+package scalad
 
 import javax.persistence.EntityManager
-import javax.persistence.criteria.Predicate
 
 /**
  * @author janmachacek
@@ -9,8 +8,7 @@ import javax.persistence.criteria.Predicate
 class JPA(private val entityManager: EntityManager) {
   require(entityManager != null, "The 'entityManager' must not be null.")
 
-  import ScalaData._
-
+  import Scalad._
   import scalaz._
 
   def get[T](id: Serializable)(implicit evidence: ClassManifest[T]) = {
@@ -29,7 +27,7 @@ class JPA(private val entityManager: EntityManager) {
     entity
   }
 
-  def s2[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
+  def select2[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
     (q: QueryBuilder) =>
       val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
 

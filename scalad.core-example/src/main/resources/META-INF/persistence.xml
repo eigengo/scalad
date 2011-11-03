@@ -4,7 +4,7 @@
 			 version="2.0">
 	
 	<persistence-unit name="org.cakesolutions.scaladata.core.example" transaction-type="RESOURCE_LOCAL">
-		<class>org.cakesolutions.scaladata.example.User</class>
+		<class>scalad.example.User</class>
 
 		<properties>
 			<property name="hibernate.show_sql" value="false"/>

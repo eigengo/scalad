@@ -3,7 +3,7 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.cakesolutions.scaladata</groupId>
+	<groupId>scalad</groupId>
 	<artifactId>parent</artifactId>
 	<version>0.1</version>
 	<packaging>pom</packaging>
@@ -23,8 +23,8 @@
 	</dependencies>
 
 	<modules>
-		<module>org.cakesolutions.scaladata.core</module>
-		<module>org.cakesolutions.scaladata.core-example</module>
+		<module>scalad.core</module>
+		<module>scalad.core-example</module>
 
 	</modules>
 
