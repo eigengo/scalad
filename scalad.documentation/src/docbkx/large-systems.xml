@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<chapter id="large-systems">
+	<title>Testing large systems using Specs2 Spring</title>
+
+	<section>
+		<title>What are large systems?</title>
+		<para>Before we explore the intricacies of the code involved in testing large systems, we need to explore
+			what we mean by <emphasis>large system</emphasis>. In what we call large systems, there are many components
+			that need to be tested and those components depend on many other Java EE components. Moreover, the structure
+			of the code should be as <emphasis>elegant</emphasis> and <emphasis>flexible</emphasis> as possible, without
+			imposing technical restrictions.
+		</para>
+		<para>Let's take a quick detour to explore the structure of large Spring applications. Enterprise [Spring] applications
+		are usually made up of modules; in the smallest applications, these modules represent the tiers. The application
+		is then simple packaging of these modules. Let's start with a small application that consists of four such modules.
+		We have the <code>domain</code>, <code>repository</code>, <code>services</code> and the <code>webapp</code>.
+		</para>
+		<para>The most efficient configuration structure is to create <emphasis>self-configuring modules</emphasis>. This
+		means that every module that contains Spring functionality should carry just enough configuration to configure
+		itself. Consequently, if we want to add functionality to the application, all that it take is to add the module
+		to the application; no other portion of our application needs to change. Consider structure of application called
+		<code>org.specs2.app</code>:
+		<programlisting language="shell"><![CDATA[
+org.specs2.app.domain
+src
+main
+  java
+	org.specs2.app.domain
+  scala
+	org.specs2.app.domain
+test
+  java
+	org.specs2.app.domain
+  scala
+	org.specs2.app.domain
+org.specs2.app.repository
+src
+main
+  resources
+	META-INF
+	  spring
+		module-context.xml
+org.specs2.app.services
+src
+main
+  resources
+	META-INF
+	  spring
+		module-context.xml
+  scala
+	org.specs2.app.services
+	  SomeService.scala
+test
+  scala
+	org.specs2.app.services
+	  SomeServiceSpecification.scala
+org.specs2.app.webapp
+src
+main
+test
+webapp]]>
+		</programlisting>
+			This rather long listing of directories shows that every module contains the <code>/META-INF/spring/module-context.xml</code>
+			file. This file contains the Spring elements that are defined in the module.
+		</para>
+		<para>Consider this example: in the <code>repository</code>, the <code>module-context.xml</code> defines,
+			for example, the <code>HibernateTemplate</code> bean. The <code>services</code> <emphasis>depends on</emphasis>
+			the <code>repository</code> module, therefore all beans defined in the <code>repository</code>
+			module are "visible" in the <code>module-context.xml</code> file in the <code>services</code> module.
+			The <code>webapp</code> then assembles two Spring application contexts: one for the user interface portion
+			of the application and another application context that contains the headless beans.
+		</para>
+		<mediaobject>
+			<imageobject role="fo">
+				<imagedata align="left" valign="top" fileref="images/layers.png" format="PNG" scale="0.7"/>
+			</imageobject>
+		</mediaobject>
+		<para>Notice in particular the naming convention; particularly the <code>module-context.xml</code> files. If all
+		other modules in your application follow the <emphasis>self-configured</emphasis> route, then adding new
+		functionality to the application is as easy as adding a dependency.</para>
+	</section>
+	<section>
+		<title>Testing large systems</title>
+		<para>To test these large systems, we need to set up the environment for the test. The configuration that brings
+		together the individual configuration files from the different modules is easy. If you had followed our naming
+		advice, all you have to do is to annotate your tests with
+		<code>@ContextConfiguration(Array("classpath*:/META-INF/spring/module-context.xml"))</code>. This will load
+		the configuration from <emphasis>all <code>module-context.xml</code>-named files in all modules on the classpath</emphasis>!
+		</para>
+		<para>In addition to setting up the Spring <interfacename>ApplicationContext</interfacename>, we need to set up
+		other Java EE components that the beans depend on. Such components include, for example, a JNDI-bound
+		<interfacename>javax.sql.DataSource</interfacename>, <classname>javax.mail.Session</classname>,
+		<interfacename>javax.transaction.UserTransaction</interfacename>, and many others. Furthermore, we need to set up
+		the transactional behaviour of the tests itself.
+		</para>
+		<para>The annotations you need to define all these components are the common Specs2 Spring annotations
+		(viz <xref linkend="setup-annotations" />). Repeating the Specs2 annotations on every test results in clear
+		code duplication. To reduce the code duplication, you should create custom Java annotation and annotate that annotation
+		with the required Specs2 annotations; and use your custom annotation on your tests. Instead of having multiple
+		tests that duplicate the same annotations:
+			<programlisting language="java"><![CDATA[
+import org.specs2.spring.Specification
+...
+
+@DataSource(name = "java:comp/env/jdbc/test",
+  driverClass = classOf[JDBCDriver], url = "jdbc:hsqldb:mem:test")
+@Transactional
+@ContextConfiguration(Array("classpath*:/META-INF/spring/module-context.xml"))
+class SomeServiceTest extends Specification {
+  @Autowired
+  var someService: SomeService = _
+
+  "specification" in {
+    // call methods of someService that will hopefully return success!
+    success
+  }
+}
+
+import org.specs2.spring.Specification
+...
+
+@DataSource(name = "java:comp/env/jdbc/test",
+  driverClass = classOf[JDBCDriver], url = "jdbc:hsqldb:mem:test")
+@Transactional
+@ContextConfiguration(Array("classpath*:/META-INF/spring/module-context.xml"))
+class AnotherServiceTest extends Specification {
+  @Autowired
+  var anotherService: AnotherService = _
+
+  "specification" in {
+    // call methods of anotherService that will hopefully return success!
+    success
+  }
+}]]></programlisting>
+		We will create a custom annotation, and annotate it with the Specs2 annotations and use it on our tests:
+			<programlisting language="java"><![CDATA[
+@DataSource(name = "java:comp/env/jdbc/test",
+  driverClass = classOf[JDBCDriver], url = "jdbc:hsqldb:mem:test")
+@Transactional
+@ContextConfiguration(Array("classpath*:/META-INF/spring/module-context.xml"))
+@Retention(RetentionPolicy.RUNTIME)
+public @interface IntegrationTest {
+}
+
+
+import org.specs2.spring.Specification
+...
+
+@IntegrationTest
+class SomeServiceTest extends Specification {
+  @Autowired
+  var someService: SomeService = _
+
+  "specification" in {
+    // call methods of someService that will hopefully return success!
+    success
+  }
+}
+
+import org.specs2.spring.Specification
+...
+
+@IntegrationTest
+class AnotherServiceTest extends Specification {
+  @Autowired
+  var anotherService: AnotherService = _
+
+  "specification" in {
+    // call methods of anotherService that will hopefully return success!
+    success
+  }
+}]]></programlisting>
+		</para>
+		<section>
+			<title>Multiple environment entries</title>
+			<para>In the previous example, we have used a single <interfacename>javax.sql.DataSource</interfacename>,
+			<interfacename>javax.mail.Session</interfacename> (and many others). However, some applications
+			require <emphasis>many</emphasis> of those Java EE components. Unfortunately, it is not possible
+			to duplicate annotations on a class. We can't, for example, use two <code>DataSource</code> annotations.</para>
+			<para>Instead, we must use the <code>Jndi</code> annotation and specify the <code>DataSource</code>s in
+			its <code>dataSource</code> property. <remark>Even more unfortunately, we cannot use the <code>Jndi</code>
+			annotation in our Scala code, we must use the custom Java annotation route.</remark></para>
+
+			<para>The JNDI annotation defines the following properties, which let you define multiple Java EE
+			components of the required type.
+			
+			</para>
+		</section>
+	</section>
+
+</chapter>

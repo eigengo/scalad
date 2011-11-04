@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+		"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<chapter id="introduction">
+	<title>Introducing Specs2 Spring</title>
+
+	<section>
+		<title>What is Specs2 Spring</title>
+		<para>This chapter covers the motivation, implementation and typical usage
+			of the Spring Specification. The Spring Specification is an extension
+			of the <ulink url="http://implicit.ly/specs2-10">Specs2</ulink> framework.
+		</para>
+
+		<para>The Specs2 Spring includes code that will help you set up the context for the
+		entire integration test--and by context, we mean the appropriate entries in the
+		JNDI environment as well as the beans under test, autowired in to the instance
+		of the test under execution. Finally, Specs2 Spring can be easily configured
+		to run every example in its own transaction that rolls back automatically when
+		the example completes.</para>
+
+		<para>The extension is meant to help you write tests in Scala to test your Spring code
+			(whether implemented in Java or Scala). You will be able to take advantage of all
+			the features of the Specs2 framework and apply them to the Spring test code. 
+		</para>
+
+		<para><emphasis>Why bother</emphasis>, you ask? Because Specs2 and Scala allow you to be much more
+		expressive in your tests. Consequently, your tests can focus on the essence of what is being tested, reducing
+		the noise that the traditional Java code requires. A motivational example shows how to prepare test data,
+		insert them to the RDBMS and then verify that some service method works as expected.
+		<programlisting language="java"><![CDATA[
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.orm.hibernate3.HibernateTemplate
+import org.specs2.spring.{BeanTables, HibernateDataAccess, Specification}
+
+@IntegrationTest
+class SomeComponentSpec extends Specification
+  with HibernateDataAccess with BeanTables {
+  @Autowired var someComponent: SomeComponent = _
+
+  /**
+   * Shows the usage of BeanTables and HibernateDataAccess to
+   * set up and insert test objects using the convenient tabular notation.
+   */
+  "getByUsername finds existing Rider" in {
+    "age" | "username" | "name" | "teamName" |
+      32  ! "janm"     ! "Jan"  ! "Wheelers" |
+      30  ! "anic"     ! "Ani"  ! "Team GB"  |> insert[Rider]
+
+    this.someComponent.getByUsername("janm").getName must_== ("Jan")
+
+  }
+}]]>
+		</programlisting>
+		There are several things at play here: the custom <code>IntegrationTest</code> annotation defines the environment for the
+		Spring components under test, the <code>Autowired</code> annotation on the <code>someComponent</code> variable
+		tells Specs2 Spring to inject the constructed bean. Finally, the example sets up some test data using <code>BeanTables</code>,
+		bulk-inserts them using the Hibernate ORM (method <code>insert[T]: (T => Result)</code> in <code>HibernateDataAccess</code>). Once
+		the set-up work is done, we proceed to verify the correct behaviour of the <code>getByUsername</code> method in <code>SomeComponent</code>.
+		Notably, the <code>"getByUsename finds existing Rider"</code> example runs in its own transaction. When the example
+		completes (whether successfully or unsuccessfully), the transaction is rolled back!
+		</para>
+		<para>The equivalent Java code would be <emphasis>much, much</emphasis> longer: you would be able to use the <code>spring-test</code>
+		artifact, giving you the ability to inject dependencies into your test and run the test methods in their own transactions.
+		Unfortunately, you would still be left to your own devices to set up the JNDI environment (which is non-trivial and
+		<emphasis>very</emphasis> repetitive work). Moreover, the body of the test method would contain much more noise,
+		distracting you from the test code.
+		</para>
+
+		<para>Specs2 Spring contains support to set-up:
+			<itemizedlist>
+				<listitem>
+					<para>Spring <interfacename>ApplicationContext</interfacename> from the specificed list of configuration files,</para>
+				</listitem>
+				<listitem>
+					<para>Multiple XA <code>DataSource</code>s to RDBMS as <code>javax.sql.DataSource</code>,</para>
+				</listitem>
+				<listitem>
+					<para>Single XA transaction support as <code>javax.transaction.UserTransaction</code>,</para>
+				</listitem>
+				<listitem>
+					<para>Multiple JMS queue and topic support <code>javax.jms.Queue</code>, <code>javax.jms.Topic</code>,
+						<code>javax.jms.ConnectionFactory</code>,</para>
+				</listitem>
+				<listitem>
+					<para>Multiple Javamail sessions as <code>javax.mail.Session</code>,</para>
+				</listitem>
+				<listitem>
+					<para>Multiple <code>WorkManager</code>s--both the <code>commonj.work.WorkManager</code> and
+						the <code>javax.spi.resource.work.WorkManager</code>,</para>
+				</listitem>
+				<listitem>
+					<para>Multiple arbitrary beans, as long as the types include accessible nullary constructor,</para>
+				</listitem>
+				<listitem>
+					<para>Ability to register a class that can inject arbitrary entries into the JNDI environment.</para>
+				</listitem>
+			</itemizedlist>
+			In addition to the set-up phase, Specs2 Spring extension enhances the behaviour of the examples by isolating
+			them (when required) in their own transactions.
+		</para>
+		<para>But there's much more to Specs2 Spring: on top of the set-up code, Specs2 Spring comes with convenience
+		traits that simplify setting up test data, manipulating data in ORM tools and relational databases.
+		</para>
+
+		<section id="specification-testing">
+			<title>Spring testing approaches</title>
+
+			<para>In an integration test, you exercise code in multiple components working together.
+				These components sometimes need
+				<emphasis>external</emphasis>
+				components, such as
+				a<code>javax.sql.DataSource</code>,<code>javax.mail.Session</code>,
+				<code>javax.jms.Queue</code>,<code>javax.jms.Topic</code>,
+				<code>javax.transaction.TransactionManager</code>
+				and
+				many other components of the Java EE world.
+			</para>
+
+			<para>To keep the source code of our application as maintainable as possible and
+				to remove as much complexity from the build process as possible, we should try to
+				keep the source code that is running on the developers' machines
+				<emphasis>exactly</emphasis>
+				the same as the source code that is deployed on the pre-production servers as well
+				as the production servers.
+			</para>
+
+			<para>The development machine may have its "own" RDBMS, specific configuration of the
+				JMS infrastructure; the pre-production machine will have its specific configuration,
+				and same will apply to the live machine. Moreover, some of the details of the configuration
+				should be inaccessible to us. (For example, the connection details to the live RDBMS should
+				be kept secret, not left to the developers to maintain.)
+			</para>
+
+			<para>Java offers a good way to achieve this: register the appropriate resources in
+				JNDI. Taking a
+				<emphasis>huge</emphasis>
+				simplification, you may think of JNDI as
+				<code>Map&lt;String, Object&gt;</code>
+				(<code>Map[String, AnyRef]</code> in Scala speak).
+				The application consumes objects from JNDI and uses them as the variable resources we explored
+				in the previous few paragraphs.
+			</para>
+
+			<para>So, in addition to the test that makes up the test, we will need to include code
+				that sets up JNDI for the test. The trouble is that such code would be repetitive
+				if it were to be used more than once and we would need to ensure that it runs before
+				any other code. Consider the following code snippet as an example.
+			</para>
+
+			<programlisting language="java"><![CDATA[
+class SomeTest extends Specification {
+
+  "specification" in {
+    // set-up JNDI environment
+    // code that depends (consumes) the entries from JNDI
+    success
+  }
+
+  "another specification" in {
+    // set-up JNDI environment
+    // code that depends (consumes) the entries from JNDI
+    success
+  }
+}
+			]]></programlisting>
+		</section>
+
+		<section>
+			<title>Spring Integration Testing</title>
+
+			<para>The situation with JNDI is similar to the operations we need to set up the
+			<interfacename>ApplicationContext</interfacename> that contains the beans under test. Once
+			we have the <interfacename>ApplicationContext</interfacename>, we can inject the beans
+			from that context into the test we are running. Expanding the code from the previous
+			example, we can write:</para>
+
+			<programlisting language="java"><![CDATA[
+class SomeTest extends Specification {
+  // set-up JNDI environment
+
+  "specification" in {
+    // set-up JNDI environment
+    // the Spring application that consumes the JNDI entries
+    val someService = new ClassPathXmlApplicationContext("...").
+      getBean(classOf[SomeService])
+    success
+  }
+
+  "another specification" in {
+    // set-up JNDI environment
+    // the Spring application that consumes the JNDI entries
+    val someService = new ClassPathXmlApplicationContext("...").
+      getBean(classOf[SomeService])
+    success
+  }
+}]]>
+			</programlisting>
+
+			<para>Additionally, we would like to examine whether the specifications hold
+			(in the examples) in a way that isolates each example; when the example
+			completes its work, we would like to roll back any changes we may have
+			made to the system. In other words, it should be possible to run each example
+			in its own transaction and that transaction should be automatically rolled back
+			when the example finishes. We could write all this code by hand, but that would make
+			the bodies of the examples far too noisy, it would distract us from the code
+			that makes up the examples!</para>
+
+			<para>The code in <classname>SomeTest</classname> now sets up everything we will
+			need in the specifications. Specs2 Spring sets out to eliminate the duplication
+			in setting up the <interfacename>ApplicationContext</interfacename> and the
+			JNDI environment; and, if requested, executes each example in its own
+			transaction and rolls back that transaction automatically when the example
+			finishes.</para>
+		</section>
+
+	</section>
+
+	<section>
+		<title>Getting started</title>
+		<para>You can delegate all this work to the code that makes up Specs2 Spring
+		extension. Let's start with an example and then explore the details.</para>
+
+		<programlisting language="java"><![CDATA[
+import org.springframework.beans.factory.annotation.Autowired
+import org.specs2.spring.Specification
+import org.springframework.test.context.ContextConfiguration
+import org.specs2.spring.annotation.DataSource
+import org.hsqldb.jdbc.JDBCDriver
+
+@DataSource(name = "java:comp/env/jdbc/test",
+  driverClass = classOf[JDBCDriver], url = "jdbc:hsqldb:mem:test")
+@ContextConfiguration(Array("classpath*:/META-INF/spring/module-context.xml"))
+class SomeTest extends Specification {
+  @Autowired
+  var someService: SomeService = _
+
+  "specification" in {
+    // call methods of someService that will hopefully return success!
+    success
+  }
+}
+		]]></programlisting>
+
+		<para>The code in <classname>SomeTest</classname> includes <emphasis>variable</emphasis>
+		of type <classname>SomeService</classname> that carries the <code>Autowired</code> annotation.
+		This indicates to the Specs2 Spring extendsion that this field should be set to be the
+		bean of type <classname>SomeService</classname> looked up from the <interfacename>ApplicationContext</interfacename>
+		constructed by loading the configuration in <code>META-INF/spring/module-context.xml</code> files
+		on the entire classpath. The code in one of the <code>META-INF/spring/module-context.xml</code>
+		includes JNDI lookup of the <code>javax.sql.DataSource</code> under name
+		<code>java:comp/env/jdbc/test</code>. </para>
+
+		<programlisting language="xml"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/jee
+		http://www.springframework.org/schema/jee/spring-jee.xsd">
+
+	<context:component-scan base-package="org.specs2.springexample"/>
+	<jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/test"
+		expected-type="javax.sql.DataSource"/>
+
+</beans>
+		]]></programlisting>
+
+		<para>Notice the <code>jee:jndi-lookup</code> element, which queries the JNDI environment
+		for the <code>java:comp/env/jdbc/test</code>, whose expected type is
+		<interfacename>javax.sql.DataSource</interfacename>.</para>
+
+		<para>To repeat the introductory parahgraph, the Specs2 Spring includes code that
+		will help you set up the context for the entire integration test--and by context,
+		we mean the appropriate entries in the JNDI environment as well as the beans under
+		test, autowired in to the instance of the test under execution. Finally, Specs2
+		Spring can be easily configured to run every example in its own transaction that
+		rolls back automatically when the example completes.</para>
+	</section>
+
+</chapter>

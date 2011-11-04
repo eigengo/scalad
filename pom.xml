@@ -26,6 +26,7 @@
 		<module>scalad.core</module>
 		<module>scalad.core-example</module>
 
+		<module>scalad.documentation</module>
 	</modules>
 
 	<build>
