@@ -18,10 +18,10 @@ class TransactionalAspect {
   private def transactionalTrait(transactional: Transactions) {}
 
   @Around(value = "anyExecution() && transactionalTrait(transactional)")
-  def transactionally(pjp: ProceedingJoinPoint, transactional: Transactions) = {
+  def transactionally(pjp: ProceedingJoinPoint, transactional: Transactions) =
     Scalad.transactionally(transactional.getPlatformTransactionManager) {
       pjp.proceed()
     }
-  }
+
 
 }
