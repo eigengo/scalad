@@ -1,6 +1,7 @@
 package scalad
 
-import javax.persistence.EntityManager
+import javax.persistence.{EntityTransaction, EntityManager}
+import transaction.{Transactions, PlatformTransaction, PlatformTransactionManager}
 
 /**
  * @author janmachacek
@@ -11,6 +12,8 @@ class JPA(private val entityManager: EntityManager) {
   import Scalad._
   import scalaz._
 
+  def getPlatformTransactionManager = new JPAPlatformTransactionManager(entityManager)
+
   def get[T](id: Serializable)(implicit evidence: ClassManifest[T]) = {
     val entity = entityManager.find(evidence.erasure, id)
     if (entity != null)
@@ -20,9 +23,7 @@ class JPA(private val entityManager: EntityManager) {
   }
 
   def persist(entity: AnyRef) = {
-    entityManager.getTransaction.begin()
     entityManager.persist(entity)
-    entityManager.getTransaction.commit()
 
     entity
   }
@@ -53,3 +54,18 @@ class JPA(private val entityManager: EntityManager) {
 
 }
 
+class JPAPlatformTransactionManager(private val entityManager: EntityManager) extends PlatformTransactionManager {
+
+  def getTransaction = new JPAPlatformTransaction(entityManager.getTransaction)
+
+}
+
+class JPAPlatformTransaction(private val transaction: EntityTransaction) extends PlatformTransaction {
+  
+  def begin() { transaction.begin() }
+
+  def rollback() { transaction.rollback() }
+
+  def commit() { transaction.commit() }
+  
+}

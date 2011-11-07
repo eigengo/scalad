@@ -1,11 +1,12 @@
 package scalad
 
+import transaction.PlatformTransactionManager
+
 /**
  * @author janmachacek
  */
 object Scalad {
 
-  import annotation.tailrec
   import scalaz.Input
   import scalaz.IterV._
   import scalaz.Enumerator
@@ -13,13 +14,36 @@ object Scalad {
 
   implicit val javaIteratorEnumerator = new Enumerator[java.util.Iterator] {
 
-    @tailrec
+    @scala.annotation.tailrec
     def apply[E, A](iterator: java.util.Iterator[E], i: IterV[E, A]): IterV[E, A] = i match {
       case _ if !iterator.hasNext => i
       case Done(acc, input) => i
       case Cont(k) =>
         val x = iterator.next
         apply(iterator, k(El(x)))
+    }
+  }
+
+  /**
+   * Perform the function {{f}} in with transactional semantics, i.e. run the operations in the function atomically,
+   * independently, consistently and durably. Ensure that the operations are committed when {{f}} completes normally and
+   * that the operations in {{f}} are rolled back when {{f}} ends with an exception.
+   *
+   * @param manager the transaction manager that operates the underlying resource
+   * @param f the function to execute with transactional semantics
+   */
+  def transactionally[A](manager: PlatformTransactionManager)(f: => A) = {
+    val transaction = manager.getTransaction
+    try {
+      transaction.begin()
+      val ret = f
+      transaction.commit()
+
+      ret
+    } catch {
+      case e: Exception =>
+        transaction.rollback()
+        throw e
     }
   }
 
