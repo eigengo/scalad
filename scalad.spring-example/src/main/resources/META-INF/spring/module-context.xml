@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:component-scan base-package="scalad.example.spring"/>
+
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+		<property name="url" value="jdbc:hsqldb:mem:ps"/>
+		<property name="username" value="sa"/>
+		<property name="password" value=""/>
+	</bean>
+
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="packagesToScan">
+			<list>
+				<value>scalad.example</value>
+			</list>
+		</property>
+		<property name="hibernateProperties">
+			<value>
+				hibernate.show_sql=true
+				hibernate.dialect=org.hibernate.dialect.HSQLDialect
+				hibernate.cache.use_structured_entries=false
+				hibernate.hbm2ddl.auto=create-drop
+			</value>
+		</property>
+	</bean>
+
+	<bean id="hibernateTemplate" class="org.springframework.orm.hibernate3.HibernateTemplate">
+		<property name="sessionFactory" ref="sessionFactory"/>
+	</bean>
+
+
+</beans>

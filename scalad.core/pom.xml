@@ -19,16 +19,6 @@
 			<version>6.0.3</version>
 		</dependency>
 		<dependency>
-			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j</artifactId>
-			<version>1.5.M02</version>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-core</artifactId>
-			<version>4.0.0.CR5</version>
-		</dependency>
-		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
 			<version>4.0.0.CR5</version>

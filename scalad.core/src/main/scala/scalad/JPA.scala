@@ -44,6 +44,7 @@ class JPA(private val entityManager: EntityManager) {
   def select[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
     val cb = entityManager.getCriteriaBuilder
     val criteriaQuery = cb.createQuery(evidence.erasure)
+    criteriaQuery.from(evidence.erasure)
     val query = entityManager.createQuery(criteriaQuery)
 
     val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]

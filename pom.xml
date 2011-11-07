@@ -10,6 +10,7 @@
 
 	<properties>
 		<aspectj.version>1.6.11</aspectj.version>
+		<spring.version>3.1.0.RC1</spring.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<scalaVersion>2.9.1</scalaVersion>
 	</properties>
@@ -32,6 +33,7 @@
 		<module>scalad.core-example</module>
 
 		<module>scalad.spring</module>
+		<module>scalad.spring-example</module>
 
 		<module>scalad.documentation</module>
 	</modules>

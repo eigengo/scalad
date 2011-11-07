@@ -27,7 +27,7 @@ object Main {
       for (i <- 0 to 20) {
         val u = new User()
         u.setUsername("a" + i)
-        persist(u)
+        transactionally(getPlatformTransactionManager) { persist(u) }
       }
 
       val users = select(list[User])

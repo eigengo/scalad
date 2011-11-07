@@ -8,30 +8,45 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>scalad</groupId>
-	<artifactId>spring</artifactId>
+	<artifactId>spring-example</artifactId>
 	<packaging>jar</packaging>
 	<version>0.1</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>scalad</groupId>
-			<artifactId>core</artifactId>
+			<artifactId>spring</artifactId>
 			<version>0.1</version>
 		</dependency>
 		<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>2.2.4</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework</groupId>
-			<artifactId>spring-orm</artifactId>
+			<artifactId>spring-core</artifactId>
 			<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context-support</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>3.4.GA</version>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
-			<version>4.0.0.CR5</version>
+			<version>3.6.8.Final</version>
 		</dependency>
 		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-entitymanager</artifactId>
-			<version>4.0.0.CR5</version>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache-core</artifactId>
+			<version>2.4.3</version>
 		</dependency>
 	</dependencies>
 
