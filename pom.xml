@@ -31,6 +31,8 @@
 		<module>scalad.core</module>
 		<module>scalad.core-example</module>
 
+		<module>scalad.spring</module>
+
 		<module>scalad.documentation</module>
 	</modules>
 
