@@ -2,8 +2,6 @@ package scalad
 
 import javax.persistence.{EntityTransaction, EntityManager}
 import transaction.{PlatformTransaction, PlatformTransactionManager}
-import scalad.JPA.RunnableQuery
-import scalad.JPA.RunnableQuery
 
 /**
  * @author janmachacek
