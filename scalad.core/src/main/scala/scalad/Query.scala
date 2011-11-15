@@ -11,4 +11,8 @@ class Query(val property: String, val value: Option[AnyRef]) {
 
   def && = this
 
+  def || = this
+
+  def orderBy() = this
+
 }
