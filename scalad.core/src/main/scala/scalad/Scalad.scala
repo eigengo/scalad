@@ -48,6 +48,7 @@ object Scalad {
   }
 
   def list[T] = collect[T, List]
+  def all[T] = list[T]
 
   def one[E]: IterV[E, E] = {
     def step(s: Input[E]): IterV[E, E] =

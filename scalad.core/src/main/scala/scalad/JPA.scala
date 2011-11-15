@@ -1,7 +1,7 @@
 package scalad
 
 import javax.persistence.{EntityTransaction, EntityManager}
-import transaction.{Transactions, PlatformTransaction, PlatformTransactionManager}
+import transaction.{PlatformTransaction, PlatformTransactionManager}
 
 /**
  * @author janmachacek
