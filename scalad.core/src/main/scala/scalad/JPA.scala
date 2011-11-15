@@ -2,6 +2,8 @@ package scalad
 
 import javax.persistence.{EntityTransaction, EntityManager}
 import transaction.{PlatformTransaction, PlatformTransactionManager}
+import scalad.JPA.RunnableQuery
+import scalad.JPA.RunnableQuery
 
 /**
  * @author janmachacek
@@ -29,14 +31,23 @@ class JPA(private val entityManager: EntityManager) {
   }
 
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
-    (q: QueryBuilder) =>
+    (q: Query) =>
       val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
 
       val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
       i(r).run
   }
 
-  def selectThat[T : ClassManifest, R](i: IterV[T, R])(q: QueryBuilder) = {
+  def sel[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
+    new Runner[R]({q =>
+        val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
+
+        val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
+        i(r).run}
+    )
+  }
+
+  def selectThat[T : ClassManifest, R](i: IterV[T, R])(q: Query) = {
     val f = selector(i)
     f(q)
   }
@@ -51,6 +62,27 @@ class JPA(private val entityManager: EntityManager) {
     i(r).run
   }
 
+  class Runner[T](op: Query => T) {
+
+    def |(q: Query) = new RunnableQuery[T](this)
+    
+    def | = new RunnableQuery[T](this)
+    
+    def ||[T] = op(new Query("x", None))
+
+    def run(q: Query) = op(q)
+    
+    def apply(): T = {
+      run(new Query("x", None))
+    }
+  }
+  
+  class RunnableQuery[T](runner: Runner[T]) extends Query("x", None) {
+    
+    def | = runner.run(this)
+    
+  }
+  
 }
 
 class JPAPlatformTransactionManager(private val entityManager: EntityManager) extends PlatformTransactionManager {

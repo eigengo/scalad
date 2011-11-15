@@ -12,7 +12,7 @@ import javax.persistence.criteria.Root;
  */
 class CriteriaWrapper {
 
-	static <T> TypedQuery<T> getQuery(QueryBuilder queryBuilder, EntityManager entityManager, Class<T> entityType) {
+	static <T> TypedQuery<T> getQuery(Query queryBuilder, EntityManager entityManager, Class<T> entityType) {
 		final CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 		final CriteriaQuery<T> criteriaQuery = cb.createQuery(entityType);
 		final Root<T> root = criteriaQuery.from(entityType);

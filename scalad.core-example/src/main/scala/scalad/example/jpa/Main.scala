@@ -33,9 +33,13 @@ object Main {
       val users = select(list[User])
       println(users)
 
+      val f = sel(list[User])
+      val b = f | ("username" like "a%") |
+      println(b)
+
       val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
       val firstTwo = selector(m1)
-      println(firstTwo("username" like "a2%"))
+      println(firstTwo("username" like "a2%" && "firstName" is "a"))
 
       select(one[User])
       selectThat(one[User])("username" like "B")

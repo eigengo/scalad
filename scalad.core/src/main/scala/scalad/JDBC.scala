@@ -1,7 +1,6 @@
 package scalad
 
 import javax.sql.DataSource
-import javax.persistence.{EntityTransaction, EntityManager}
 import transaction.{PlatformTransaction, PlatformTransactionManager}
 import java.sql.Connection
 import java.lang.InheritableThreadLocal
@@ -11,6 +10,8 @@ import java.lang.InheritableThreadLocal
  */
 
 class JDBC(private val dataSource: DataSource) {
+
+
 
 }
 
@@ -22,11 +23,11 @@ class JDBCPlatformTransactionManager(private val dataSource: DataSource) extends
 
 class JDBCPlatformTransaction(private val dataSource: DataSource) extends PlatformTransaction {
   
-  def begin() {  }
+  def begin() { ConnectionHolder.get(dataSource).setAutoCommit(false) }
 
-  def rollback() {  }
+  def rollback() { ConnectionHolder.get(dataSource).rollback() }
 
-  def commit() {  }
+  def commit() { ConnectionHolder.get(dataSource).commit() }
   
 }
 
@@ -34,7 +35,14 @@ private[scalad] object ConnectionHolder {
   private val holder: ThreadLocal[Connection] = new InheritableThreadLocal[Connection]
   
   def set(connection: Connection) { holder.set(connection) }
+
+  def clear() { holder.set(null) }
   
-  def get() = holder.get()
+  def get(dataSource: DataSource) = {
+    val connection = holder.get()
+    if (connection == null) set(dataSource.getConnection)
+    
+    holder.get()
+  }
   
 }
