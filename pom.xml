@@ -35,6 +35,8 @@
 		<module>scalad.spring</module>
 		<module>scalad.spring-example</module>
 
+		<module>scalad.akka-example</module>
+
 		<module>scalad.documentation</module>
 	</modules>
 
