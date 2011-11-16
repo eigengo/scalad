@@ -1,22 +1,24 @@
 package scalad.example.akka
 
 import akka.actor.Actor
-import javax.ws.rs.{GET, Produces, Path}
+import akka.http.{RootEndpoint, Endpoint, Get, RequestMethod}
+import util.Random
 
 /**
  * @author janmachacek
  */
-@Path("/hello")
-class GatekeeperService extends Actor {
+class GatekeeperService extends Actor with Endpoint {
+  self.dispatcher = Endpoint.Dispatcher
 
-  private case object Hello
+  def hook(uri: String) = true
 
-  @GET
-  @Produces(Array("text/html"))
-  def hello = (self ? Hello).as[String].getOrElse("couldn't say hello")
-
-  def receive = {
-    case Hello => self reply(<h1>Hello, World</h1>.toString)
+  def provide(uri: String) = {
+    Actor.actorOf[GatekeeperActor].start
   }
 
+  override def preStart = {
+    Actor.registry.actorFor[RootEndpoint].get ! Endpoint.Attach(hook, provide)
+  }
+
+  def receive = handleHttpRequest
 }

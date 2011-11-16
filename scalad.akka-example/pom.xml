@@ -39,6 +39,11 @@
 			<artifactId>akka-http</artifactId>
 			<version>1.2</version>
 		</dependency>
+		<dependency>
+			<groupId>se.scalablesolutions.akka</groupId>
+			<artifactId>akka-remote</artifactId>
+			<version>1.2</version>
+		</dependency>
 		<!--
 		<dependency>
 			<groupId>se.scalablesolutions.akka</groupId>

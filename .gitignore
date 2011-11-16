@@ -37,3 +37,4 @@ project/*/.DS_Store
 tm.out
 tmlog*.log
 *.tm*.epoch
+out
