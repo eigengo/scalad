@@ -5,5 +5,18 @@
 	<display-name>Scalad Akka Example application</display-name>
 	<description>Scalad Akka Example application</description>
 
+	<listener>
+		<listener-class>scalad.example.akka.Initializer</listener-class>
+	</listener>
+
+	<servlet>
+		<servlet-name>AkkaServlet</servlet-name>
+		<servlet-class>akka.http.AkkaMistServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>AkkaServlet</servlet-name>
+		<url-pattern>/*</url-pattern>
+	</servlet-mapping>
 
 </web-app>
