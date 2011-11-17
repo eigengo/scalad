@@ -20,14 +20,15 @@ object Main {
     val entityManager = entityManagerFactory.createEntityManager()
     new Worker(entityManager).work()
   }
-  
+
   class Worker(entityManager: EntityManager) extends JPA(entityManager) with Transactions {
 
     def work() {
       for (i <- 0 to 20) {
         val u = new User()
         u.setUsername("a" + i)
-        transactionally(getPlatformTransactionManager) { persist(u) }
+        u.persist
+        // transactionally(getPlatformTransactionManager) { persist(u) }
       }
 
       val users = select(list[User])

@@ -12,6 +12,60 @@ class JPA(private val entityManager: EntityManager) {
   import Scalad._
   import scalaz._
 
+  trait Persistable[T] {
+
+    def entity: T
+
+    def persistN: T = {
+      val e = entity
+      
+      entityManager.persist(e)
+
+      e
+    }
+    
+    def persist: T = {
+      val t = entityManager.getTransaction
+      t.begin()
+      val e = entity
+      entityManager.persist(e)
+      t.commit()
+
+      e
+    }
+    
+  }
+
+  object PersistableMixin {
+    implicit def innerObj[T](o: Mixin[T]): T = o.entity
+
+    def ::[T](o: T) = new Mixin(o)
+
+    final class Mixin[T] private[JPA](val entity: T) extends Persistable[T]
+  }
+
+  implicit def toPersistable[T](entity: T): Persistable[T] = {
+    entity :: PersistableMixin
+  }
+
+  /*
+  trait Selectable[T] {
+    def entityType: Class[T]
+
+    def get(id: Any): T = {
+      entityManager.find(this.entityType, id).asInstanceOf[T]
+    }
+
+  }
+
+
+  implicit def toSelectable[E](implicit evidence: ClassManifest[E]): Selectable[E] = {
+    new Selectable[E] {
+      def entityType = evidence.erasure.asInstanceOf[Class[E]]
+    }
+  }
+  */
+  
   def getPlatformTransactionManager = new JPAPlatformTransactionManager(entityManager)
 
   def get[T](id: Serializable)(implicit evidence: ClassManifest[T]) = {
@@ -37,15 +91,17 @@ class JPA(private val entityManager: EntityManager) {
   }
 
   def sel[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
-    new Runner[R]({q =>
+    new Runner[R]({
+      q =>
         val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
 
         val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
-        i(r).run}
+        i(r).run
+    }
     )
   }
 
-  def selectThat[T : ClassManifest, R](i: IterV[T, R])(q: Query) = {
+  def selectThat[T: ClassManifest, R](i: IterV[T, R])(q: Query) = {
     val f = selector(i)
     f(q)
   }
@@ -63,24 +119,24 @@ class JPA(private val entityManager: EntityManager) {
   class Runner[T](op: Query => T) {
 
     def |(q: Query) = new RunnableQuery[T](this)
-    
+
     def | = new RunnableQuery[T](this)
-    
+
     def ||[T] = op(new Query("x", None))
 
     def run(q: Query) = op(q)
-    
+
     def apply(): T = {
       run(new Query("x", None))
     }
   }
-  
+
   class RunnableQuery[T](runner: Runner[T]) extends Query("x", None) {
-    
+
     def | = runner.run(this)
-    
+
   }
-  
+
 }
 
 class JPAPlatformTransactionManager(private val entityManager: EntityManager) extends PlatformTransactionManager {
@@ -90,11 +146,17 @@ class JPAPlatformTransactionManager(private val entityManager: EntityManager) ex
 }
 
 class JPAPlatformTransaction(private val transaction: EntityTransaction) extends PlatformTransaction {
-  
-  def begin() { transaction.begin() }
 
-  def rollback() { transaction.rollback() }
+  def begin() {
+    transaction.begin()
+  }
 
-  def commit() { transaction.commit() }
-  
+  def rollback() {
+    transaction.rollback()
+  }
+
+  def commit() {
+    transaction.commit()
+  }
+
 }
