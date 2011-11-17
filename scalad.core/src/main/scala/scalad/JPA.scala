@@ -34,6 +34,10 @@ class JPA(private val entityManager: EntityManager) {
       e
     }
     
+    def delete() {
+      entityManager.remove(entity)
+    }
+    
   }
 
   object PersistableMixin {
