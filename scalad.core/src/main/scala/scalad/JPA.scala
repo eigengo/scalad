@@ -6,7 +6,7 @@ import transaction.{PlatformTransaction, PlatformTransactionManager}
 /**
  * @author janmachacek
  */
-class JPA(private val entityManager: EntityManager) extends OrmLike {
+class JPA(private val entityManager: EntityManager) extends PersistableLike {
   require(entityManager != null, "The 'entityManager' must not be null.")
 
   import Scalad._

@@ -63,6 +63,8 @@ object Scalad {
   }
 
 
-  // implicit def toQueryBuilder(s: String) = new Query(s, None)
+  implicit def toPartialRestriction(property: String) = new PartialRestriction(property)
+  
+  implicit def toQuery(restriction: Restriction) = new Query(restriction)
 
 }

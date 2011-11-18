@@ -2,13 +2,13 @@ package scalad.spring
 
 import org.springframework.orm.hibernate3.HibernateTemplate
 import org.hibernate.criterion.DetachedCriteria
-import scalad.{OrmLike, Query}
+import scalad.{PersistableLike, Query}
 
 
 /**
  * @author janmachacek
  */
-class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) extends OrmLike {
+class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) extends PersistableLike {
   require(hiberanteTemplate != null, "The 'hibernateTemplate' must not be null.")
 
   import scalad.Scalad._
