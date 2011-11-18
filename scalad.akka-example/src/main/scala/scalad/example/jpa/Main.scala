@@ -1,4 +1,4 @@
-package scalad.example.hibernate
+package scalad.example.jpa
 
 import scalad.example.User
 import javax.persistence.{EntityManager, Persistence}
