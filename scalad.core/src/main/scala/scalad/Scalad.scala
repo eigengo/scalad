@@ -62,9 +62,16 @@ object Scalad {
     Cont(step)
   }
 
+  def id = Identity()
 
-  implicit def toPartialRestriction(property: String) = new PartialRestriction(property)
+  implicit def toPartialRestriction(property: String) = new PartialRestriction(NamedProperty(property))
   
-  implicit def toQuery(restriction: Restriction) = new Query(restriction)
+  implicit def toPartialRestriction(id: Identity) = new PartialRestriction(id)
+  
+  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil)
+
+  implicit def toPartialOrder(property: String) = new PartialOrder(property)
+
+  implicit def toGroupBy(property: String) = GroupBy(property)
 
 }
