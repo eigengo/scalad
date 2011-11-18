@@ -21,21 +21,21 @@ class Worker @Autowired() (val hibernateTemplate: HibernateTemplate) extends Hib
     for (i <- 0 to 20) {
       val u = new User()
       u.setUsername("a" + i)
-      persist(u)
+      u.persist
     }
 
     val users = select(list[User])
     println(users)
 
-    val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
-    val firstTwo = selector(m1)
-    println(firstTwo("username" like "a2%"))
+    //val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
+    //val firstTwo = selector(m1)
+    // println(firstTwo("username" like "a2%"))
 
-    select(one[User])
-    selectThat(one[User])("username" like "B")
+    //select(one[User])
+    //selectThat(one[User])("username" like "B")
 
-    val usersWhose = selectThat(head[User])("username" like "a1%")
-    println(usersWhose)
+    //val usersWhose = selectThat(head[User])("username" like "a1%")
+    //println(usersWhose)
   }
 
 }

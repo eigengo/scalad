@@ -6,51 +6,11 @@ import transaction.{PlatformTransaction, PlatformTransactionManager}
 /**
  * @author janmachacek
  */
-class JPA(private val entityManager: EntityManager) {
+class JPA(private val entityManager: EntityManager) extends OrmLike {
   require(entityManager != null, "The 'entityManager' must not be null.")
 
   import Scalad._
   import scalaz._
-
-  trait Persistable[T] {
-
-    def entity: T
-
-    def persistN: T = {
-      val e = entity
-      
-      entityManager.persist(e)
-
-      e
-    }
-    
-    def persist: T = {
-      val t = entityManager.getTransaction
-      t.begin()
-      val e = entity
-      entityManager.persist(e)
-      t.commit()
-
-      e
-    }
-    
-    def delete() {
-      entityManager.remove(entity)
-    }
-    
-  }
-
-  object PersistableMixin {
-    implicit def innerObj[T](o: Mixin[T]): T = o.entity
-
-    def ::[T](o: T) = new Mixin(o)
-
-    final class Mixin[T] private[JPA](val entity: T) extends Persistable[T]
-  }
-
-  implicit def toPersistable[T](entity: T): Persistable[T] = {
-    entity :: PersistableMixin
-  }
 
   /*
   trait Selectable[T] {
@@ -94,17 +54,6 @@ class JPA(private val entityManager: EntityManager) {
       i(r).run
   }
 
-  def sel[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
-    new Runner[R]({
-      q =>
-        val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
-
-        val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
-        i(r).run
-    }
-    )
-  }
-
   def selectThat[T: ClassManifest, R](i: IterV[T, R])(q: Query) = {
     val f = selector(i)
     f(q)
@@ -120,27 +69,11 @@ class JPA(private val entityManager: EntityManager) {
     i(r).run
   }
 
-  class Runner[T](op: Query => T) {
+  def underlyingPersist = (entity) => transactionally(getPlatformTransactionManager) { entityManager.persist(entity) }
 
-    def |(q: Query) = new RunnableQuery[T](this)
-
-    def | = new RunnableQuery[T](this)
-
-    def ||[T] = op(new Query("x", None))
-
-    def run(q: Query) = op(q)
-
-    def apply(): T = {
-      run(new Query("x", None))
-    }
-  }
-
-  class RunnableQuery[T](runner: Runner[T]) extends Query("x", None) {
-
-    def | = runner.run(this)
-
-  }
-
+  def underlyingDelete = (entity) => transactionally(getPlatformTransactionManager) { entityManager.remove(entity) }
+  
+  implicit val platformTransactionManager = getPlatformTransactionManager
 }
 
 class JPAPlatformTransactionManager(private val entityManager: EntityManager) extends PlatformTransactionManager {

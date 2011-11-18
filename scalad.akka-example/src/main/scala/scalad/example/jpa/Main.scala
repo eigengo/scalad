@@ -9,9 +9,6 @@ import scalad.transaction.Transactions
  */
 object Main {
 
-  import scalaz.IterV._
-  import scalaz._
-  import Scalaz._
   import scalad._
   import Scalad._
 
@@ -22,14 +19,14 @@ object Main {
   }
 
   class Worker(entityManager: EntityManager) extends JPA(entityManager) with Transactions {
+    
+    def getUsers = select(list[User])
 
     def work() {
       for (i <- 0 to 20) {
         val u = new User()
         u.setUsername("a" + i)
         u.persist
-
-        // transactionally(getPlatformTransactionManager) { persist(u) }
       }
 
       val users = select(list[User])
@@ -39,9 +36,9 @@ object Main {
 //      val b = f | ("username" like "a%") |
 //      println(b)
 
-      val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
-      val firstTwo = selector(m1)
-      println(firstTwo("username" like "a2%"))
+//      val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
+//      val firstTwo = selector(m1)
+//      println(firstTwo("username" like "a2%" && "firstName" like "a1%"))
 //
 //      select(one[User])
 //      selectThat(one[User])("username" like "B")

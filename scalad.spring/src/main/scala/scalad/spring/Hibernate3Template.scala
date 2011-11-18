@@ -2,13 +2,13 @@ package scalad.spring
 
 import org.springframework.orm.hibernate3.HibernateTemplate
 import org.hibernate.criterion.DetachedCriteria
-import scalad.Query
+import scalad.{OrmLike, Query}
 
 
 /**
  * @author janmachacek
  */
-class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) {
+class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) extends OrmLike {
   require(hiberanteTemplate != null, "The 'hibernateTemplate' must not be null.")
 
   import scalad.Scalad._
@@ -40,4 +40,8 @@ class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) {
     i(r).run
   }
 
+  def underlyingPersist = (entity) => hiberanteTemplate.saveOrUpdate(entity)
+
+  def underlyingDelete = (entity) => hiberanteTemplate.delete(entity)
+  
 }

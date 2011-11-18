@@ -63,6 +63,6 @@ object Scalad {
   }
 
 
-  implicit def toQueryBuilder(s: String) = new Query(s, None)
+  // implicit def toQueryBuilder(s: String) = new Query(s, None)
 
 }

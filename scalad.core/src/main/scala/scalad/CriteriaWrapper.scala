@@ -13,8 +13,8 @@ object CriteriaWrapper {
     val criteriaQuery = cb.createQuery(entityType)
     val root = criteriaQuery.from(entityType)
 
-    val predicate = cb.like(root.get[String](query.property), query.value.get.toString)
-    criteriaQuery.where(Array(predicate):_*)
+    //val predicate = cb.like(root.get[String](query.property), query.value.get.toString)
+    //criteriaQuery.where(Array(predicate):_*)
 
     entityManager.createQuery(criteriaQuery)
   }
