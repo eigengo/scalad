@@ -28,14 +28,11 @@ class Query (private[scalad] val restriction: Restriction,
 
   def orderBy(o: OrderBy) = new Query(restriction, o :: orderByClauses, groupByClauses)
   
-  def orderBy(property: String) = new Query(restriction, Asc(property) :: orderByClauses, groupByClauses)
+  def orderBy(property: Property) = new Query(restriction, Asc(property) :: orderByClauses, groupByClauses)
 
   def orderBy(orderBys: OrderBy*) = new Query(restriction, orderBys.toList ::: orderByClauses, groupByClauses)
 
-
-  def groupBy(property: String) = new Query(restriction, orderByClauses, GroupBy(property) :: groupByClauses)
-  
-  def groupBy(properties: String*) = new Query(restriction, orderByClauses, properties.toList.map(property => GroupBy(property)) ::: groupByClauses)
+  def groupBy(groupBys: GroupBy*) = new Query(restriction, orderByClauses, groupBys.toList ::: groupByClauses)
     
 
   override def toString = {
@@ -56,11 +53,9 @@ class Query (private[scalad] val restriction: Restriction,
 /**
  * Group by clause regarding the property
  */
-final case class GroupBy(property: String)
+final case class GroupBy(property: Property)
 
-class PartialOrder(val property: String) {
-  require(!property.isEmpty, "The 'property' must not be empty.")
-
+class PartialOrder(val property: Property) {
   def asc = Asc(property)
   def desc = Desc(property)
 }
@@ -69,8 +64,8 @@ class PartialOrder(val property: String) {
  * Order by abstract class with the self-documenting {{Asc}} and {{Desc}} subclasses
  */
 abstract class OrderBy
-final case class Asc(property: String) extends OrderBy
-final case class Desc(property: String) extends OrderBy
+final case class Asc(property: Property) extends OrderBy
+final case class Desc(property: Property) extends OrderBy
 
 abstract class Property
 final case class NamedProperty(property: String) extends Property
@@ -84,6 +79,18 @@ final case class Identity() extends Property
  */
 class PartialRestriction(val property: Property) {
 
+  /**
+   * Alias for ＝ for poor souls who do not have the U.S. Scalaz keyboard
+   * layout
+   */
+  def is = ＝_
+
+  def isNot = !＝_
+
+  def gt = > _
+
+  def lt = < _
+
   def ＝(value: Any) = Binary(property, '==, value)
 
   def >(value: Any) = Binary(property, '>, value)
@@ -96,7 +103,7 @@ class PartialRestriction(val property: Property) {
   
   def !＝(value: Any) = Binary(property, '!=, value)
   
-  def in(value: Seq[Any]) = Binary(property, 'in, value)
+  def in(value: Any*) = In(property, value)
   
   def isNull = IsNull(property)
   
@@ -108,10 +115,34 @@ class PartialRestriction(val property: Property) {
  * The base restriction; the case classes represent the concrete restriction cases; the names of the {{Restriction}}
  * subclasses' names should be descriptive enough :)
  */
-abstract class Restriction
+abstract class Restriction {
+
+  /**
+   * Guard-like method that can collapse any restriction down to
+   * {{Tautology()}} if {{b}} is not {{true}}.
+   * 
+   * Typical usage pattern is
+   * <pre>
+   *   val someValue = 100
+   *   val query = (id ＝ 5 when someValue < 100)
+   *   
+   *   // query is just Tautology()
+   * </pre>
+   *
+   * @param b function that must return {{true}} for the restriction to hold
+   */
+  def when(b: => Boolean) = {
+    if (b) this
+    else Tautology()
+  }
+  
+}
 final case class Binary(property: Property, op: Symbol, value: Any) extends Restriction
+final case class In(property: Property, value: Seq[Any]) extends Restriction
 final case class IsNull(property: Property) extends Restriction
 final case class Not(restriction: Restriction) extends Restriction
 final case class Like(property: Property, value: String) extends Restriction
 final case class Conjunction(lhs: Query, rhs: Query) extends Restriction
 final case class Disjunction(lhs: Query, rhs: Query) extends Restriction
+final case class Tautology() extends Restriction
+final case class Contradiction() extends Restriction

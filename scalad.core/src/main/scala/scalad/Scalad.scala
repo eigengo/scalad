@@ -62,6 +62,12 @@ object Scalad {
     Cont(step)
   }
 
+  /**
+   * Identity of a particular record or an object. Prefer this function instead of specifying the
+   * column name directly, particularly when you are not using raw JDBC.
+   *
+   * @return the {{Identity}} property
+   */
   def id = Identity()
 
   implicit def toPartialRestriction(property: String) = new PartialRestriction(NamedProperty(property))
@@ -70,8 +76,8 @@ object Scalad {
   
   implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil)
 
-  implicit def toPartialOrder(property: String) = new PartialOrder(property)
+  implicit def toPartialOrder(property: String) = new PartialOrder(NamedProperty(property))
 
-  implicit def toGroupBy(property: String) = GroupBy(property)
+  implicit def toGroupBy(property: String) = GroupBy(NamedProperty(property))
 
 }
