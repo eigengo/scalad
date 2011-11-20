@@ -14,7 +14,7 @@ class Query (private[scalad] val restriction: Restriction,
    * @param q the query to be conjoined
    * @return the conjoined query
    */
-  def &&(q: Query) = new Query(Conjunction(this, q), orderByClauses, groupByClauses)
+  def &&(q: Query) = new Query(Conjunction(this.restriction, q.restriction), orderByClauses, groupByClauses)
 
   /**
    * Disjoin two queries and return a new {{Query}} with the two queries
@@ -23,7 +23,7 @@ class Query (private[scalad] val restriction: Restriction,
    * @param q the query to be disjoined
    * @return the disjoined query
    */
-  def ||(q: Query) = new Query(Disjunction(this, q), orderByClauses, groupByClauses)
+  def ||(q: Query) = new Query(Disjunction(this.restriction, q.restriction), orderByClauses, groupByClauses)
   
 
   def orderBy(o: OrderBy) = new Query(restriction, o :: orderByClauses, groupByClauses)
@@ -142,7 +142,7 @@ final case class In(property: Property, value: Seq[Any]) extends Restriction
 final case class IsNull(property: Property) extends Restriction
 final case class Not(restriction: Restriction) extends Restriction
 final case class Like(property: Property, value: String) extends Restriction
-final case class Conjunction(lhs: Query, rhs: Query) extends Restriction
-final case class Disjunction(lhs: Query, rhs: Query) extends Restriction
+final case class Conjunction(lhs: Restriction, rhs: Restriction) extends Restriction
+final case class Disjunction(lhs: Restriction, rhs: Restriction) extends Restriction
 final case class Tautology() extends Restriction
 final case class Contradiction() extends Restriction
