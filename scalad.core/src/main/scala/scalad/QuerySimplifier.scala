@@ -17,6 +17,7 @@ class QuerySimplifier {
     val newRestriction = query.restriction match {
       case d: Disjunction => simplifyDisjunction(d)
       case c: Conjunction => simplifyConjunction(c)
+      case In(property, values) if (values.isEmpty) => Contradiction()
       case x => x
     }
     
