@@ -3,6 +3,7 @@ package scalad.example.hibernate
 import scalad.example.User
 import javax.persistence.{EntityManager, Persistence}
 import scalad.transaction.Transactions
+import scalad.jpa.JPA
 
 /**
  * @author janmachacek
@@ -29,8 +30,11 @@ object Main {
         }
       }
 
-      val users = select(list[User])
-      println(users)
+      val allUsers = select(list[User])
+      println(allUsers)
+      
+      val users = selector(list[User])
+      users("username" ＝ "foo") // inner join("addresses"))
 
       //      val f = sel(list[User])
       //      val b = f | ("username" like "a%") |

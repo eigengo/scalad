@@ -3,6 +3,7 @@ package scalad.example.jpa
 import scalad.example.User
 import javax.persistence.{EntityManager, Persistence}
 import scalad.transaction.Transactions
+import scalad.jpa.JPA
 
 /**
  * @author janmachacek

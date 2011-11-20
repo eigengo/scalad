@@ -1,7 +1,7 @@
-package scalad
+package scalad.jpa
 
-import javax.persistence.EntityManager;
-
+import javax.persistence.EntityManager
+import scalad.Query
 
 /**
  * @author janmachacek

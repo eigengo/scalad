@@ -1,7 +1,7 @@
-package scalad
+package scalad.jpa
 
 import javax.persistence.{EntityTransaction, EntityManager}
-import transaction.{PlatformTransaction, PlatformTransactionManager}
+import scalad.{Restriction, Query, Scalad, PersistableLike}
 
 /**
  * @author janmachacek
@@ -47,14 +47,14 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   }
 
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
-    (q: Query) =>
+    (q: JPAQuery) =>
       val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
 
       val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
       i(r).run
   }
 
-  def selectThat[T: ClassManifest, R](i: IterV[T, R])(q: Query) = {
+  def selectThat[T: ClassManifest, R](i: IterV[T, R])(q: JPAQuery) = {
     val f = selector(i)
     f(q)
   }
@@ -74,26 +74,13 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   def underlyingDelete = (entity) => transactionally(getPlatformTransactionManager) { entityManager.remove(entity) }
   
   implicit val platformTransactionManager = getPlatformTransactionManager
-}
 
-class JPAPlatformTransactionManager(private val entityManager: EntityManager) extends PlatformTransactionManager {
+  implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses)
 
-  def getTransaction = new JPAPlatformTransaction(entityManager.getTransaction)
+  implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil)
 
-}
+  //def fetch(path: String) =
 
-class JPAPlatformTransaction(private val transaction: EntityTransaction) extends PlatformTransaction {
-
-  def begin() {
-    transaction.begin()
-  }
-
-  def rollback() {
-    transaction.rollback()
-  }
-
-  def commit() {
-    transaction.commit()
-  }
+  //def join(path: String) = new Join(path)
 
 }
