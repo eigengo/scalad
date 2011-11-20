@@ -26,7 +26,7 @@ object Main {
         val u = new User()
         u.setUsername("a" + i)
         transactionally(getPlatformTransactionManager) {
-          persist(u)
+          u.persist
         }
       }
 

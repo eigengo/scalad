@@ -14,85 +14,53 @@ package scalad
 class QuerySimplifier {
 
   def simplify(query: Query) = {
-    val newRestriction = query.restriction match {
-      case d: Disjunction => simplifyDisjunction(d)
-      case c: Conjunction => simplifyConjunction(c)
-      case In(property, values) if (values.isEmpty) => Contradiction()
-      case x => x
-    }
-    
+    val newRestriction = simplifyRestriction(query.restriction)
     new Query(newRestriction, query.orderByClauses, query.groupByClauses)
   }
+  
+  private def simplifyRestriction(r: Restriction) = r match {
+    case d: Disjunction => simplifyDisjunction(d)
+    case c: Conjunction => simplifyConjunction(c)
+    case In(property, values) if (values.isEmpty) => Contradiction()
+    case x => x
+  }
 
-  def simplifyDisjunction(d: Disjunction): Restriction = {
+  private def simplifyDisjunction(d: Disjunction): Restriction = {
     (d.lhs, d.rhs) match {
+      // trivial simplifications
       case (Tautology(), Tautology()) => Tautology()
       case (Contradiction(), Contradiction()) => Contradiction()
       case (Tautology(), rhs) if rhs != Tautology() => rhs
       case (lhs, Tautology()) if lhs != Tautology() => lhs
 
+      // equals & duplicates
       case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if (p1 == p2 && v1 == v2 && op1 == op2) => b
       case (Binary(p1, '==, v1), Binary(p2, '!=, v2)) if (p1 == p2 && v1 == v2) => Tautology()
       case (Binary(p1, '!=, v1), Binary(p2, '==, v2)) if (p1 == p2 && v1 == v2) => Tautology()
 
-      case (d1: Disjunction, d2: Disjunction) =>
-        (simplifyDisjunction(d1), simplifyDisjunction(d2)) match {
-          case (Tautology(), _) => Tautology()
-          case (_, Tautology()) => Tautology()
-          case (x1, x2) => simplifyDisjunction(Disjunction(x1, x2))
-        }
-      case (lhs, d2: Disjunction) =>
-        simplifyDisjunction(d2) match {
-          case Tautology() => lhs
-          case x => simplifyDisjunction(Disjunction(lhs, x))
-        }
-      case (d2: Disjunction, rhs) =>
-        simplifyDisjunction(d2) match {
-          case Tautology() => rhs
-          case x => simplifyDisjunction(Disjunction(x, rhs))
-        }
-      case _ => d
+      case (lhs, rhs) =>
+        simplifyDisjunction(Disjunction(simplifyRestriction(lhs), simplifyRestriction(rhs)))
     }
   }
   
-  def simplifyConjunction(c: Conjunction): Restriction = {
+  private def simplifyConjunction(c: Conjunction): Restriction = {
     (c.lhs, c.rhs) match {
-      // trivial cases
+      // trivial simplifications
       case (Tautology(), Tautology()) => Tautology()
       case (Contradiction(), _) => Contradiction()
       case (_, Contradiction()) => Contradiction()
       case (Tautology(), rhs) if (rhs != Conjunction) => rhs
       case (lhs, Tautology()) if (lhs != Conjunction)=> lhs
 
-      // equals & is-null
+      // equals & duplicates
       case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if (p1 == p2 && v1 == v2 && op1 == op2) => b
       case (Binary(p1, '==, v1), Binary(p2, '!=, v2)) if (p1 == p2 && v1 == v2) => Contradiction()
       case (Binary(p1, '!=, v1), Binary(p2, '==, v2)) if (p1 == p2 && v1 == v2) => Contradiction()
       case (Binary(p1, _, v1), IsNull(p2)) if (p1 == p2) => Contradiction()
 
-      // combinations
-      case (c1: Conjunction, c2: Conjunction) =>
-        (simplifyConjunction(c1), simplifyConjunction(c2)) match {
-          case (Tautology(), Tautology()) => Tautology()
-          case (Contradiction(), _) => Contradiction()
-          case (_, Contradiction()) => Contradiction()
-          case (Tautology(), rhs) => rhs
-          case (lhs, Tautology()) => lhs
-          case (x1, x2) => Conjunction(x1, x2)
-        }
-      case (lhs, c2: Conjunction) =>
-        simplifyConjunction(c2) match {
-          case Contradiction() => Contradiction()
-          case Tautology() => lhs
-          case x => if (lhs == Tautology()) x else simplifyConjunction(Conjunction(lhs, x))
-        }
-      case (c2: Conjunction, rhs) =>
-        simplifyConjunction(c2) match {
-          case Contradiction() => Contradiction()
-          case Tautology() => rhs
-          case x => if (rhs == Tautology()) x else simplifyConjunction(Conjunction(x, rhs))
-        }
-      case _ => c
+      // it is a conjunction of some other restrictions
+      case (lhs, rhs) =>
+        simplifyConjunction(Conjunction(simplifyRestriction(lhs), simplifyRestriction(rhs)))
     }
   }
   

@@ -26,15 +26,15 @@ object QuerySpec {
     val v      = "X"
     val simpl  = (id ＝ 5) || ("X" ＝ v when v != "X") 
 
-    println(simpl)
+    println("***")
 
     val querySimplifier: QuerySimplifier = new QuerySimplifier()
-    //println(querySimplifier.simplify(simpl))
-    //println(querySimplifier.simplify(at))
-//    println(querySimplifier.simplify(at2))
-//    println(querySimplifier.simplify(af2))
+    println(querySimplifier.simplify(simpl))
+    println(querySimplifier.simplify(at))
+    println(querySimplifier.simplify(at2))
+    println(querySimplifier.simplify(af2))
+    println(querySimplifier.simplify(af))
     println(querySimplifier.simplify(si1))
-    //println(querySimplifier.simplify(af))
   }
 
 }
