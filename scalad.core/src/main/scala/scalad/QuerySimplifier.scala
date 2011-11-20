@@ -49,13 +49,14 @@ class QuerySimplifier {
       case (Tautology(), Tautology()) => Tautology()
       case (Contradiction(), _) => Contradiction()
       case (_, Contradiction()) => Contradiction()
-      case (Tautology(), rhs) if (rhs != Conjunction) => rhs
-      case (lhs, Tautology()) if (lhs != Conjunction)=> lhs
+      case (Tautology(), rhs) if (rhs != Conjunction) => simplifyRestriction(rhs)
+      case (lhs, Tautology()) if (lhs != Conjunction)=> simplifyRestriction(lhs)
 
       // equals & duplicates
       case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if (p1 == p2 && v1 == v2 && op1 == op2) => b
       case (Binary(p1, '==, v1), Binary(p2, '!=, v2)) if (p1 == p2 && v1 == v2) => Contradiction()
       case (Binary(p1, '!=, v1), Binary(p2, '==, v2)) if (p1 == p2 && v1 == v2) => Contradiction()
+      case (Binary(p1, '==, v1), Binary(p2, '==, v2)) if (p1 == p2 && v1 != v2) => Contradiction()
       case (Binary(p1, _, v1), IsNull(p2)) if (p1 == p2) => Contradiction()
 
       // it is a conjunction of some other restrictions

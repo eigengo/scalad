@@ -15,9 +15,10 @@ object QuerySpec {
     val ident  =   id ＝ 6
     val at     =  ("foo" ＝ "a") || ("foo" !＝ "a")
     val af     =  ("foo" ＝ "a") && ("foo" !＝ "a")
-    val at2     =  ("foo" ＝ "a") || (("foo" !＝ "a") || ("foo" ＝ "a"))
-    val af2     =  ("foo" ＝ "a") && (("foo" !＝ "a") && ("foo" ＝ "a"))
-    val si1     =  ("foo" ＝ "a") && (("foo" ＝ "a") && ("foo" ＝ "a"))
+    val af3    =  ("foo" ＝ "a") && ("foo" ＝ "b")
+    val at2    =  ("foo" ＝ "a") || (("foo" !＝ "a") || ("foo" ＝ "a"))
+    val af2    =  ("foo" ＝ "a") && (("foo" !＝ "a") && ("foo" ＝ "a"))
+    val si1    =  ("foo" ＝ "a") && (("foo" ＝ "a") && ("foo" ＝ "a"))
 
     println(and)
     println(gt)
@@ -34,6 +35,7 @@ object QuerySpec {
     println(querySimplifier.simplify(at2))
     println(querySimplifier.simplify(af2))
     println(querySimplifier.simplify(af))
+    println(querySimplifier.simplify(af3))
     println(querySimplifier.simplify(si1))
   }
 
