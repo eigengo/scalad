@@ -17,6 +17,7 @@ object QuerySpec {
     val af     =  ("foo" ＝ "a") && ("foo" !＝ "a")
     val at2     =  ("foo" ＝ "a") || (("foo" !＝ "a") || ("foo" ＝ "a"))
     val af2     =  ("foo" ＝ "a") && (("foo" !＝ "a") && ("foo" ＝ "a"))
+    val si1     =  ("foo" ＝ "a") && (("foo" ＝ "a") && ("foo" ＝ "a"))
 
     println(and)
     println(gt)
@@ -30,8 +31,9 @@ object QuerySpec {
     val querySimplifier: QuerySimplifier = new QuerySimplifier()
     //println(querySimplifier.simplify(simpl))
     //println(querySimplifier.simplify(at))
-    println(querySimplifier.simplify(at2))
-    println(querySimplifier.simplify(af2))
+//    println(querySimplifier.simplify(at2))
+//    println(querySimplifier.simplify(af2))
+    println(querySimplifier.simplify(si1))
     //println(querySimplifier.simplify(af))
   }
 

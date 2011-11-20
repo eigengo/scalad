@@ -30,23 +30,26 @@ class QuerySimplifier {
       case (Contradiction(), Contradiction()) => Contradiction()
       case (Tautology(), rhs) if rhs != Tautology() => rhs
       case (lhs, Tautology()) if lhs != Tautology() => lhs
+
+      case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if (p1 == p2 && v1 == v2 && op1 == op2) => b
       case (Binary(p1, '==, v1), Binary(p2, '!=, v2)) if (p1 == p2 && v1 == v2) => Tautology()
       case (Binary(p1, '!=, v1), Binary(p2, '==, v2)) if (p1 == p2 && v1 == v2) => Tautology()
+
       case (d1: Disjunction, d2: Disjunction) =>
         (simplifyDisjunction(d1), simplifyDisjunction(d2)) match {
           case (Tautology(), _) => Tautology()
           case (_, Tautology()) => Tautology()
-          case (x1, x2) => Disjunction(x1, x2)
+          case (x1, x2) => simplifyDisjunction(Disjunction(x1, x2))
         }
       case (lhs, d2: Disjunction) =>
         simplifyDisjunction(d2) match {
           case Tautology() => lhs
-          case x => x
+          case x => simplifyDisjunction(Disjunction(lhs, x))
         }
       case (d2: Disjunction, rhs) =>
         simplifyDisjunction(d2) match {
           case Tautology() => rhs
-          case x => x
+          case x => simplifyDisjunction(Disjunction(x, rhs))
         }
       case _ => d
     }
@@ -62,6 +65,7 @@ class QuerySimplifier {
       case (lhs, Tautology()) if (lhs != Conjunction)=> lhs
 
       // equals & is-null
+      case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if (p1 == p2 && v1 == v2 && op1 == op2) => b
       case (Binary(p1, '==, v1), Binary(p2, '!=, v2)) if (p1 == p2 && v1 == v2) => Contradiction()
       case (Binary(p1, '!=, v1), Binary(p2, '==, v2)) if (p1 == p2 && v1 == v2) => Contradiction()
       case (Binary(p1, _, v1), IsNull(p2)) if (p1 == p2) => Contradiction()
@@ -80,13 +84,13 @@ class QuerySimplifier {
         simplifyConjunction(c2) match {
           case Contradiction() => Contradiction()
           case Tautology() => lhs
-          case x => if (lhs == Tautology()) x else c
+          case x => if (lhs == Tautology()) x else simplifyConjunction(Conjunction(lhs, x))
         }
       case (c2: Conjunction, rhs) =>
         simplifyConjunction(c2) match {
           case Contradiction() => Contradiction()
           case Tautology() => rhs
-          case x => if (rhs == Tautology()) x else c
+          case x => if (rhs == Tautology()) x else simplifyConjunction(Conjunction(x, rhs))
         }
       case _ => c
     }
