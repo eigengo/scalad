@@ -33,10 +33,10 @@ object CriteriaWrapper {
 
     query.joins.foreach {join =>
       (join.eager, join.inner) match {
-        case (true, true) => root.fetch(join.path, JoinType.INNER)
-        case (true, false) => root.fetch(join.path)
-        case (false, true) => root.join(join.path, JoinType.INNER)
-        case (false, false) => root.join(join.path)
+        case (true, true) => root.fetch(join.path.expression, JoinType.INNER)
+        case (true, false) => root.fetch(join.path.expression)
+        case (false, true) => root.join(join.path.expression, JoinType.INNER)
+        case (false, false) => root.join(join.path.expression)
       }
     }
 

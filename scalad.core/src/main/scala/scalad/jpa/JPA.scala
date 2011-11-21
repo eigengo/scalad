@@ -83,5 +83,7 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
 
   implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil, None, Nil)
+  
+  implicit def toPath(expression: String) = new PartialPath(expression)
 
 }

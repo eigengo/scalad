@@ -8,6 +8,8 @@ import org.specs2.mutable.Specification
 class QuerySpec extends Specification {
   import Scalad._
 
+  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil, None)
+
   "guard" in {
     "must reduce to nothing when `false`"       ! restrictionMatch((id ＝ "a" when false), Skip())
 
