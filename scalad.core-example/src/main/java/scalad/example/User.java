@@ -61,7 +61,7 @@ public class User {
 		sb.append("{id=").append(id);
 		sb.append(", version=").append(version);
 		sb.append(", username='").append(username).append('\'');
-		sb.append(", addresses=").append(addresses);
+		sb.append(", |addresses|=").append(addresses.size());
 		sb.append('}');
 		return sb.toString();
 	}

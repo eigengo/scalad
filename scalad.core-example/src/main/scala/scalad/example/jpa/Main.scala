@@ -38,7 +38,9 @@ object Main {
       }
 
       val users = selector(list[User])
-      println(users("username" like "a1%" innerJoinFetch "addresses"))
+      val selectedUsers = users("username" like "a1%" innerJoinFetch "addresses" page(0 to 5))
+      
+      println(selectedUsers)
     }
 
   }

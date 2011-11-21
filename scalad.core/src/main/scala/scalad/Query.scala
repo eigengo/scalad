@@ -65,7 +65,7 @@ class Query (private[scalad] val restriction: Restriction,
    * @param page the page to be set
    * @return the query with the paging clause included
    */
-  def page(page: Page) = new Query(restriction, orderByClauses, groupByClauses, Some(page))
+  def page(range: Range) = new Query(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)))
 
   /**
    * Return simplified query
@@ -242,7 +242,7 @@ abstract class Restriction {
    */
   def when(b: => Boolean) = {
     if (b) this
-    else Nothing()
+    else Skip()
   }
   
 }
@@ -305,4 +305,4 @@ final case class Contradiction() extends Restriction
 /**
  * A 'no-op' restriction; returned by the `Restriction.when` guard when the condition is `false`.
  */
-final case class Nothing() extends Restriction
+final case class Skip() extends Restriction

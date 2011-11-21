@@ -25,7 +25,7 @@ class JPAQuery(restriction: Restriction,
 
   override def simplify = new JPAQuery(simplifyRestriction(restriction), orderByClauses, groupByClauses, pageOption, joins)
 
-  override def page(page: Page) = new JPAQuery(restriction, orderByClauses, groupByClauses, Some(page), joins)
+  override def page(range: Range) = new JPAQuery(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)), joins)
 }
 
 final case class Join(path: String, inner: Boolean, eager: Boolean)

@@ -33,8 +33,8 @@ trait RestrictionSimplifier {
       case (Contradiction(), rhs) => rhs
       case (Tautology(), _) => Tautology()
       case (_, Tautology()) => Tautology()
-      case (lhs, Nothing()) => lhs
-      case (Nothing(), rhs) => rhs
+      case (lhs, Skip()) => lhs
+      case (Skip(), rhs) => rhs
 
       // equals & duplicates
       case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if p1 == p2 && v1 == v2 && op1 == op2 => b
@@ -61,8 +61,8 @@ trait RestrictionSimplifier {
       case (_, Contradiction()) => Contradiction()
       case (Tautology(), rhs) if (rhs != Conjunction) => simplifyRestriction(rhs)
       case (lhs, Tautology()) if (lhs != Conjunction)=> simplifyRestriction(lhs)
-      case (lhs, Nothing()) => lhs
-      case (Nothing(), rhs) => rhs
+      case (lhs, Skip()) => lhs
+      case (Skip(), rhs) => rhs
 
       // equals & duplicates
       case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if p1 == p2 && v1 == v2 && op1 == op2 => b

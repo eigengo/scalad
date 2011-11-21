@@ -9,7 +9,7 @@ class QuerySpec extends Specification {
   import Scalad._
 
   "guard" in {
-    "must reduce to nothing when `false`"       ! restrictionMatch((id ＝ "a" when false), Nothing())
+    "must reduce to nothing when `false`"       ! restrictionMatch((id ＝ "a" when false), Skip())
 
     "must reduce to LHS in || when `false`"     ! restrictionMatch(((id ＝ 5) || ("foo" ＝ "a" when false)), (id ＝ 5))
     "must reduce to RHS in || when `false`"     ! restrictionMatch((("foo" ＝ "a" when false) || (id ＝ 5)), (id ＝ 5))
