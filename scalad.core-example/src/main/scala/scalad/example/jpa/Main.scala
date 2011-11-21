@@ -14,6 +14,8 @@ object Main {
   import Scalad._
 
   def main(args: Array[String]) {
+    println(Tautology() == Tautology())
+    
     val entityManagerFactory = Persistence.createEntityManagerFactory("org.cakesolutions.scaladata.core.example")
     val entityManager = entityManagerFactory.createEntityManager()
     new Worker(entityManager).work()
@@ -36,7 +38,7 @@ object Main {
       }
 
       val users = selector(list[User])
-      println(users("username" like "a%" innerJoinFetch "addresses"))
+      println(users("username" like "a1%" innerJoinFetch "addresses"))
     }
 
   }

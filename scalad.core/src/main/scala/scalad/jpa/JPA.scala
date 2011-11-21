@@ -1,6 +1,6 @@
 package scalad.jpa
 
-import javax.persistence.{EntityTransaction, EntityManager}
+import javax.persistence.EntityManager
 import scalad._
 
 /**
@@ -80,12 +80,8 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   
   implicit val platformTransactionManager = getPlatformTransactionManager
 
-  implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses, Nil)
+  implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
 
-  implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil, Nil)
-
-  //def fetch(path: String) =
-
-  //def join(path: String) = new Join(path)
+  implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil, None, Nil)
 
 }

@@ -75,7 +75,7 @@ object Scalad {
   
   implicit def toPartialRestriction(id: Identity) = new PartialRestriction(id)
   
-  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil)
+  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil, None)
 
   implicit def toPartialOrder(property: String) = new PartialOrder(NamedProperty(property))
 
