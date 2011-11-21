@@ -16,7 +16,7 @@ class Query (private[scalad] val restriction: Restriction,
    * @param q the query to be conjoined
    * @return the conjoined query
    */
-  def &&(q: Query) = new Query(Conjunction(this.restriction, q.restriction), orderByClauses, groupByClauses, pageOption)
+  def &&(q: Restriction) = new Query(Conjunction(this.restriction, q), orderByClauses, groupByClauses, pageOption)
 
   /**
    * Disjoin two queries and return a new `Query` with the two queries
@@ -25,7 +25,7 @@ class Query (private[scalad] val restriction: Restriction,
    * @param q the query to be disjoined
    * @return the disjoined query
    */
-  def ||(q: Query) = new Query(Disjunction(this.restriction, q.restriction), orderByClauses, groupByClauses, pageOption)
+  def ||(q: Restriction) = new Query(Disjunction(this.restriction, q), orderByClauses, groupByClauses, pageOption)
 
   /**
    * Add an ''order by'' clause to the query

@@ -40,8 +40,8 @@ trait RestrictionSimplifier {
       case (b@Binary(p1, op1, v1), Binary(p2, op2, v2)) if p1 == p2 && v1 == v2 && op1 == op2 => b
       case (Binary(p1, '==, v1), Binary(p2, '!=, v2)) if p1 == p2 && v1 == v2 => Tautology()
       case (Binary(p1, '!=, v1), Binary(p2, '==, v2)) if p1 == p2 && v1 == v2 => Tautology()
-      case (b@Binary(p1, op1, v1), i@In(p2, v2)) if p1 == p2 && v2.contains(v1) => i
-      case (i@In(p2, v2), b@Binary(p1, op1, v1)) if p1 == p2 && v2.contains(v1) => i
+      case (b@Binary(p1, '==, v1), i@In(p2, v2)) if p1 == p2 && v2.contains(v1) => i
+      case (i@In(p2, v2), b@Binary(p1, '==, v1)) if p1 == p2 && v2.contains(v1) => i
 
       case (lhs, rhs) =>
         val simplerLhs = simplifyRestriction(lhs)

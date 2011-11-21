@@ -6,7 +6,7 @@ import scalad._
 /**
  * @author janmachacek
  */
-class JPA(private val entityManager: EntityManager) extends PersistableLike {
+class JPA(private val entityManager: EntityManager) extends PersistableLike with OrmLike {
   require(entityManager != null, "The 'entityManager' must not be null.")
 
   import Scalad._
@@ -79,11 +79,5 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   def underlyingDelete = (entity) => transactionally(getPlatformTransactionManager) { entityManager.remove(entity) }
   
   implicit val platformTransactionManager = getPlatformTransactionManager
-
-  implicit def toJPAQuery(q: Query) = new OrmQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
-
-  implicit def toJPAQuery(r: Restriction) = new OrmQuery(r, Nil, Nil, None, Nil)
-  
-  implicit def toPath(expression: String) = new PartialPath(expression)
 
 }
