@@ -1,11 +1,11 @@
-package scalad.jpa
+package scalad
 
 import scalad._
 
 /**
  * @author janmachacek
  */
-class JPAQuery(restriction: Restriction,
+class OrmQuery(restriction: Restriction,
              orderByClauses: List[OrderBy],
              groupByClauses: List[GroupBy],
              pageOption: Option[Page],
@@ -13,7 +13,7 @@ class JPAQuery(restriction: Restriction,
 
   extends Query(restriction, orderByClauses, groupByClauses, pageOption) {
 
-  private def join(join: Join) = new JPAQuery(restriction, orderByClauses, groupByClauses, pageOption, join :: joins)
+  private def join(join: Join) = new OrmQuery(restriction, orderByClauses, groupByClauses, pageOption, join :: joins)
   
   def innerJoin(path: Path) = join(Join(path, true, false))
   
@@ -31,9 +31,9 @@ class JPAQuery(restriction: Restriction,
 
   def outerJoinFetch(path: String) = join(Join(Path(path, path), false, true))
 
-  override def simplify = new JPAQuery(simplifyRestriction(restriction), orderByClauses, groupByClauses, pageOption, joins)
+  override def simplify = new OrmQuery(simplifyRestriction(restriction), orderByClauses, groupByClauses, pageOption, joins)
 
-  override def page(range: Range) = new JPAQuery(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)), joins)
+  override def page(range: Range) = new OrmQuery(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)), joins)
 }
 
 /*

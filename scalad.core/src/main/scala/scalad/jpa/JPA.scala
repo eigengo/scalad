@@ -47,7 +47,7 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   }
 
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
-    (q: JPAQuery) =>
+    (q: OrmQuery) =>
       val simplifiedQuery = q.simplify
       val query = CriteriaWrapper.getQuery(simplifiedQuery, entityManager, evidence.erasure)
 
@@ -55,7 +55,7 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
       i(r).run
   }
 
-  def selectThat[T: ClassManifest, R](i: IterV[T, R])(q: JPAQuery) = {
+  def selectThat[T: ClassManifest, R](i: IterV[T, R])(q: OrmQuery) = {
     val f = selector(i)
     f(q)
   }
@@ -80,9 +80,9 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   
   implicit val platformTransactionManager = getPlatformTransactionManager
 
-  implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
+  implicit def toJPAQuery(q: Query) = new OrmQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
 
-  implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil, None, Nil)
+  implicit def toJPAQuery(r: Restriction) = new OrmQuery(r, Nil, Nil, None, Nil)
   
   implicit def toPath(expression: String) = new PartialPath(expression)
 

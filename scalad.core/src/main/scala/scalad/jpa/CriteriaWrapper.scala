@@ -9,7 +9,7 @@ import javax.persistence.criteria.{Predicate, JoinType}
  */
 object CriteriaWrapper {
 
-  def getQuery[T](query: JPAQuery, entityManager: EntityManager, entityType: Class[T]) = {
+  def getQuery[T](query: OrmQuery, entityManager: EntityManager, entityType: Class[T]) = {
     val cb = entityManager.getCriteriaBuilder
     val criteriaQuery = cb.createQuery(entityType)
     val root = criteriaQuery.from(entityType)
