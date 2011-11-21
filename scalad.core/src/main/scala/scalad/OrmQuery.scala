@@ -9,7 +9,7 @@ class OrmQuery(restriction: Restriction,
              orderByClauses: List[OrderBy],
              groupByClauses: List[GroupBy],
              pageOption: Option[Page],
-             private[jpa] val joins: List[Join])
+             private[scalad] val joins: List[Join])
 
   extends Query(restriction, orderByClauses, groupByClauses, pageOption) {
 
