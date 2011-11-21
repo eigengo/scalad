@@ -5,10 +5,8 @@ import org.specs2.mutable.Specification
 /**
  * @author janmachacek
  */
-class QuerySpec extends Specification {
+class QuerySpec extends Specification with OrmLike {
   import Scalad._
-
-  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil, None)
 
   "guard" in {
     "must reduce to nothing when `false`"       ! restrictionMatch((id ＝ "a" when false), Skip())
