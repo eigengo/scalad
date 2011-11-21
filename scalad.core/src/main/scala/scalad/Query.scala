@@ -28,27 +28,42 @@ class Query (private[scalad] val restriction: Restriction,
   def ||(q: Query) = new Query(Disjunction(this.restriction, q.restriction), orderByClauses, groupByClauses, pageOption)
 
   /**
-   * Add an _order by_ clause to the query
+   * Add an ''order by'' clause to the query
+   *
+   * @param o the `OrderBy` clause to be added
+   * @return the query with the order by clause included
    */
   def orderBy(o: OrderBy) = new Query(restriction, o :: orderByClauses, groupByClauses, pageOption)
 
   /**
-   * Add an _order by asc `property`_ clause to the query
+   * Add an ''order by asc `property`'' clause to the query
+   *
+   * @param property the `Property` that will become `OrderBy(property, Asc())`
+   * @return the query with the order by clause included
    */
   def orderBy(property: Property) = new Query(restriction, Asc(property) :: orderByClauses, groupByClauses, pageOption)
 
   /**
-   * Add many _order by_ clauses to the query
+   * Add many ''order by'' clauses to the query
+   *
+   * @param orderBys the `OrderBy` clauses to be added
+   * @return the query with the order by clauses included
    */
   def orderBy(orderBys: OrderBy*) = new Query(restriction, orderBys.toList ::: orderByClauses, groupByClauses, pageOption)
 
   /**
-   * Add many _group by_ clauses to the query
+   * Add many ''group by'' clauses to the query
+   *
+   * @param groupBys the `GroupBy` clause to be added
+   * @return the query with the group by clause included
    */
   def groupBy(groupBys: GroupBy*) = new Query(restriction, orderByClauses, groupBys.toList ::: groupByClauses, pageOption)
 
   /**
    * Specify paging
+   *
+   * @param page the page to be set
+   * @return the query with the paging clause included
    */
   def page(page: Page) = new Query(restriction, orderByClauses, groupByClauses, Some(page))
 
@@ -94,8 +109,20 @@ abstract class OrderBy
 final case class Asc(property: Property) extends OrderBy
 final case class Desc(property: Property) extends OrderBy
 
+/**
+ * Property representing either a named property (indeed a property or a column in the database) or the
+ * identity of the row/object.
+ */
 abstract class Property
+
+/**
+ * Named reference to a property or column
+ */
 final case class NamedProperty(property: String) extends Property
+
+/**
+ * The identity property or column
+ */
 final case class Identity() extends Property
 
 /**
@@ -112,28 +139,83 @@ class PartialRestriction(val property: Property) {
    */
   def is = ＝_
 
+  /**
+   * Alias for !＝ for poor souls who do not have the U.S. Scalaz keyboard
+   * layout
+   */
   def isNot = !＝_
 
-  def gt = > _
-
-  def lt = < _
-
+  /**
+   * Equality restriction: `property` `=` `value`
+   *
+   * @param value the value to be compared
+   * @return `Binary` restriction
+   */
   def ＝(value: Any) = Binary(property, '==, value)
 
+  /**
+   * Greater than restriction: `property` `>` `value`
+   *
+   * @param value the value to be compared
+   * @return `Binary` restriction
+   */
   def >(value: Any) = Binary(property, '>, value)
   
+  /**
+   * Smaller than restriction: `property` `<` `value`
+   *
+   * @param value the value to be compared
+   * @return `Binary` restriction
+   */
   def <(value: Any) = Binary(property, '<, value)
   
+  /**
+   * Greater than or equal to restriction: `property` `≥` `value`
+   *
+   * @param value the value to be compared
+   * @return `Binary` restriction
+   */
   def >=(value: Any) = Binary(property, '>=, value)
 
+  /**
+   * Greater than or equal to restriction: `property` `≤` `value`
+   *
+   * @param value the value to be compared
+   * @return `Binary` restriction
+   */
   def <=(value: Any) = Binary(property, '>=, value)
   
+  /**
+   * Not equal to restriction: `property` `≠` `value`
+   *
+   * @param value the value to be compared
+   * @return `Binary` restriction
+   */
   def !＝(value: Any) = Binary(property, '!=, value)
   
+  /**
+   * In restriction: `property` `in` (`value(1)`, `value(2)`, ..., `value(n)`)
+   *
+   * @param value the values to be matched
+   * @return `In` restriction
+   */
   def isIn(value: Any*) = In(property, value)
   
+  /**
+   * Is null restriction `property` `is null`
+   *
+   * @param value the value to be compared
+   * @return `IsNull` restriction
+   */
   def isNull = IsNull(property)
   
+  /**
+   * Like restriction: `property` `like` `value`
+   *
+   * @param value the value to be compared; typically, the value will include the wildcard character
+   *  (typically `%`), but it is not enforced
+   * @return `Like` restriction
+   */
   def like(value: String) = Like(property, value)
 
 }
