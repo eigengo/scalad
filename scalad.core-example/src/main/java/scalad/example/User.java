@@ -1,9 +1,8 @@
 package scalad.example;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Version;
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author janmachacek
@@ -15,6 +14,13 @@ public class User {
 	@Version
 	private int version;
 	private String username;
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private Set<UserAddress> addresses = new HashSet<UserAddress>();
+	
+	public void addAddress(UserAddress userAddress) {
+		userAddress.setUser(this);
+		this.addresses.add(userAddress);
+	}
 
 	public Long getId() {
 		return id;
@@ -35,9 +41,17 @@ public class User {
 	public String getUsername() {
 		return username;
 	}
-
+	
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public Set<UserAddress> getAddresses() {
+		return addresses;
+	}
+
+	public void setAddresses(Set<UserAddress> addresses) {
+		this.addresses = addresses;
 	}
 
 	@Override
@@ -47,6 +61,7 @@ public class User {
 		sb.append("{id=").append(id);
 		sb.append(", version=").append(version);
 		sb.append(", username='").append(username).append('\'');
+		sb.append(", addresses=").append(addresses);
 		sb.append('}');
 		return sb.toString();
 	}

@@ -1,6 +1,6 @@
 package scalad.jpa
 
-import scalad.{GroupBy, OrderBy, Restriction, Query}
+import scalad._
 
 
 /**
@@ -9,17 +9,21 @@ import scalad.{GroupBy, OrderBy, Restriction, Query}
 
 class JPAQuery(restriction: Restriction,
              orderByClauses: List[OrderBy],
-             groupByClauses: List[GroupBy])
+             groupByClauses: List[GroupBy],
+             private[jpa] val joins: List[Join])
   extends Query(restriction, orderByClauses, groupByClauses) {
 
-  def inner(join: Join) = this
+  private def join(join: Join) = new JPAQuery(restriction, orderByClauses, groupByClauses, join :: joins) 
   
-  def outer(join: Join) = this
+  def innerJoin(path: String) = join(Join(path, true, false))
+  
+  def outerJoin(path: String) = join(Join(path, false, false))
+  
+  def innerJoinFetch(path: String) = join(Join(path, true, true))
+  
+  def outerJoinFetch(path: String) = join(Join(path, false, true))
 
+  override def simplify = new JPAQuery(simplifyRestriction(restriction), orderByClauses, groupByClauses, joins)
 }
 
-final class Join(path: String, inner: Boolean, eager: Boolean) {
-  
-  def fetch = new Join(path, inner, true)
-  
-}
+final case class Join(path: String, inner: Boolean, eager: Boolean)

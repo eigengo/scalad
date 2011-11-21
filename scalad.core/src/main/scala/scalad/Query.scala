@@ -1,11 +1,12 @@
 package scalad
 
+
 /**
  * Query that groups the restrictions using the appropriate binary operators
  */
 class Query (private[scalad] val restriction: Restriction,
              private[scalad] val orderByClauses: List[OrderBy],
-             private[scalad] val groupByClauses: List[GroupBy]) {
+             private[scalad] val groupByClauses: List[GroupBy]) extends RestrictionSimplifier {
 
   /**
    * Conjoin two queries and return a new {{Query}} with the two queries
@@ -33,7 +34,8 @@ class Query (private[scalad] val restriction: Restriction,
   def orderBy(orderBys: OrderBy*) = new Query(restriction, orderBys.toList ::: orderByClauses, groupByClauses)
 
   def groupBy(groupBys: GroupBy*) = new Query(restriction, orderByClauses, groupBys.toList ::: groupByClauses)
-    
+
+  def simplify = new Query(simplifyRestriction(restriction), orderByClauses, groupByClauses)
 
   override def toString = {
     val sb = new StringBuilder

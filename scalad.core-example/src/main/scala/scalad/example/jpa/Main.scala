@@ -1,9 +1,9 @@
-package scalad.example.hibernate
+package scalad.example.jpa
 
-import scalad.example.User
 import javax.persistence.{EntityManager, Persistence}
 import scalad.transaction.Transactions
 import scalad.jpa.JPA
+import scalad.example.{UserAddress, User}
 
 /**
  * @author janmachacek
@@ -25,30 +25,18 @@ object Main {
       for (i <- 0 to 20) {
         val u = new User()
         u.setUsername("a" + i)
-        transactionally(getPlatformTransactionManager) {
-          u.persist
+        for (j <- 0 to 5) {
+          val ua = new UserAddress
+          ua.setLine1("L1")
+          ua.setLine2("L2")
+          u.addAddress(ua)
         }
+
+        u.persist
       }
 
-      val allUsers = select(list[User])
-      println(allUsers)
-      
       val users = selector(list[User])
-      users("username" ＝ "foo") // inner join("addresses"))
-
-      //      val f = sel(list[User])
-      //      val b = f | ("username" like "a%") |
-      //      println(b)
-
-      //val m1 = head[User] >>= (u => head map (u2 => (u <|*|> u2)))
-      //val firstTwo = selector(m1)
-      // println(firstTwo("username" like "a2%"))
-      //
-      //      select(one[User])
-      //      selectThat(one[User])("username" like "B")
-      //
-      //      val usersWhose = selectThat(head[User])("username" like "a1%")
-      //      println(usersWhose)
+      println(users("username" like "a%" innerJoinFetch "addresses"))
     }
 
   }

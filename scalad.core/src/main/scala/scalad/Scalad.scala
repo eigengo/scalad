@@ -42,6 +42,7 @@ object Scalad {
       ret
     } catch {
       case e: Exception =>
+        e.printStackTrace()
         transaction.rollback()
         throw e
     }

@@ -29,14 +29,13 @@ object QuerySpec {
 
     println("***")
 
-    val querySimplifier: QuerySimplifier = new QuerySimplifier()
-    println(querySimplifier.simplify(simpl))
-    println(querySimplifier.simplify(at))
-    println(querySimplifier.simplify(at2))
-    println(querySimplifier.simplify(af2))
-    println(querySimplifier.simplify(af))
-    println(querySimplifier.simplify(af3))
-    println(querySimplifier.simplify(si1))
+    println(simpl.simplify)
+    println(at.simplify)
+    println(af.simplify)
+    println(af3.simplify)
+    println(af2.simplify)
+    println(at2.simplify)
+    println(si1.simplify)
   }
 
 }

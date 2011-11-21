@@ -1,7 +1,7 @@
 package scalad.jpa
 
 import javax.persistence.{EntityTransaction, EntityManager}
-import scalad.{Restriction, Query, Scalad, PersistableLike}
+import scalad._
 
 /**
  * @author janmachacek
@@ -48,7 +48,8 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
 
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
     (q: JPAQuery) =>
-      val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
+      val simplifiedQuery = q.simplify
+      val query = CriteriaWrapper.getQuery(simplifiedQuery, entityManager, evidence.erasure)
 
       val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
       i(r).run
@@ -68,6 +69,10 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
     val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
     i(r).run
   }
+  
+  def flush() { entityManager.flush() }
+  
+  def flushAndClear() { entityManager.flush(); entityManager.clear(); }
 
   def underlyingPersist = (entity) => transactionally(getPlatformTransactionManager) { entityManager.persist(entity) }
 
@@ -75,9 +80,9 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike {
   
   implicit val platformTransactionManager = getPlatformTransactionManager
 
-  implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses)
+  implicit def toJPAQuery(q: Query) = new JPAQuery(q.restriction, q.orderByClauses, q.groupByClauses, Nil)
 
-  implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil)
+  implicit def toJPAQuery(r: Restriction) = new JPAQuery(r, Nil, Nil, Nil)
 
   //def fetch(path: String) =
 

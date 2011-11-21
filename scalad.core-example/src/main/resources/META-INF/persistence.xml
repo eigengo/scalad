@@ -7,7 +7,7 @@
 		<class>scalad.example.User</class>
 
 		<properties>
-			<property name="hibernate.show_sql" value="false"/>
+			<property name="hibernate.show_sql" value="true"/>
 			<property name="hibernate.format_sql" value="false"/>
 			<property name="hibernate.connection.driver_class" value="org.hsqldb.jdbc.JDBCDriver"/>
 			<property name="hibernate.connection.url" value="jdbc:hsqldb:mem:test"/>

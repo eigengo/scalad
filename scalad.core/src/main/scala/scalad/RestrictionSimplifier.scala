@@ -11,14 +11,9 @@ package scalad
  *
  * @author janmachacek
  */
-class QuerySimplifier {
+trait RestrictionSimplifier {
 
-  def simplify(query: Query) = {
-    val newRestriction = simplifyRestriction(query.restriction)
-    new Query(newRestriction, query.orderByClauses, query.groupByClauses)
-  }
-  
-  private def simplifyRestriction(r: Restriction) = r match {
+  protected def simplifyRestriction(r: Restriction) = r match {
     case d: Disjunction => simplifyDisjunction(d)
     case c: Conjunction => simplifyConjunction(c)
     case In(property, values) if (values.isEmpty) => Contradiction()
