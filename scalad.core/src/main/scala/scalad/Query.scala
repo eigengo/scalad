@@ -228,7 +228,7 @@ abstract class Restriction {
 
   /**
    * Guard-like method that can collapse any restriction down to
-   * `Nothing()` if `b` is not `true`.
+   * `Skip()` if `b` is not `true`.
    * 
    * Typical usage pattern is
    * <pre>
