@@ -1,11 +1,8 @@
 package scalad.example.hibernate
 
-import javax.persistence.{EntityManager, Persistence}
-import scalad.transaction.Transactions
-import scalad.jpa.JPA
 import scalad.example.{UserAddress, User}
-import scalad.hibernate.Hibernate4
-import org.hibernate.{Hibernate, SessionFactory}
+import scalad.hibernate.Hibernate3
+import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
 
 /**
@@ -20,12 +17,13 @@ object Main {
     val sessionFactory = new Configuration()
             .configure()
             .addAnnotatedClass(classOf[User])
+            .addAnnotatedClass(classOf[UserAddress])
             .buildSessionFactory();
     
     new Worker(sessionFactory).work()
   }
 
-  class Worker(sessionFactory: SessionFactory) extends Hibernate4(sessionFactory) {
+  class Worker(sessionFactory: SessionFactory) extends Hibernate3(sessionFactory) {
 
     def work() {
       for (i <- 0 to 20) {
@@ -42,12 +40,12 @@ object Main {
       }
 
       val users = selector(list[User])
-      val selectedUsers = users((id is 5) && (id isNot 5))
+      val selectedUsers = users((id ＝ 5L) && (id !＝ 5L))
       println(selectedUsers)
 
       val username = "x"  // input from the users
-      val someUsers = users((id is 5) || ("username" like username when username != ""))
-      println(selectedUsers)
+      val someUsers = users((id ＝ 5L) || ("username" like username when username != ""))
+      println(someUsers)
     }
 
   }

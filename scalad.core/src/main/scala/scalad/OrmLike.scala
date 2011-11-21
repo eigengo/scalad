@@ -1,9 +1,10 @@
 package scalad
 
 /**
+ * Trait to be mixed-in to ORM-like implementations
+ *
  * @author markh
  */
-
 trait OrmLike {
 
   implicit def toOrmQuery(q: Query) = new OrmQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
