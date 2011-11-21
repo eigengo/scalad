@@ -44,11 +44,6 @@ class Hibernate3(private val sessionFactory: SessionFactory) extends Persistable
         case Skip() => None
       }
       
-      getCriterion(simplifiedQuery.restriction) match {
-        case None =>
-        case Some(c) => criteria.add(c)
-      }
-
       simplifiedQuery.orderByClauses.foreach(_ match {
         case Asc(NamedProperty(p)) => criteria.addOrder(Order.asc(p))
         case Desc(NamedProperty(p)) => criteria.addOrder(Order.desc(p))
@@ -57,11 +52,16 @@ class Hibernate3(private val sessionFactory: SessionFactory) extends Persistable
 
       // group bys
 
-      val results =
-        if (simplifiedQuery.restriction == Contradiction())
-          new java.util.ArrayList[T]().iterator()
-        else
-          criteria.list().iterator().asInstanceOf[java.util.Iterator[T]]
+      val results = simplifiedQuery.restriction match {
+        case Contradiction() => new java.util.ArrayList[T]().iterator()
+        case r => getCriterion(r) match {
+          case Some(r2) =>
+            criteria.add(r2)
+            criteria.list().iterator().asInstanceOf[java.util.Iterator[T]]
+          case None =>
+            new java.util.ArrayList[T]().iterator()
+        }
+      }
 
       session.close()
       
