@@ -44,7 +44,7 @@ object Main {
       println(selectedUsers)
 
       val username = "a1%"
-      val someUsers = users((id ＝ 3L) || ("username" like username when username != ""))
+      val someUsers = users((id ＝ 3L) || ("username" like username when username != "") fetch "addresses")
       println(someUsers)
     }
 

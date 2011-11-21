@@ -19,17 +19,13 @@ class OrmQuery(restriction: Restriction,
   
   def outerJoin(path: Path) = join(Join(path, false, false))
   
-  def innerJoinFetch(path: Path) = join(Join(path, true, true))
-  
-  def outerJoinFetch(path: Path) = join(Join(path, false, true))
+  def fetch(path: Path) = join(Join(path, true, true))
 
   def innerJoin(path: String) = join(Join(Path(path, path), true, false))
 
   def outerJoin(path: String) = join(Join(Path(path, path), false, false))
 
-  def innerJoinFetch(path: String) = join(Join(Path(path, path), true, true))
-
-  def outerJoinFetch(path: String) = join(Join(Path(path, path), false, true))
+  def fetch(path: String) = join(Join(Path(path, path), true, true))
 
   override def simplify = new OrmQuery(simplifyRestriction(restriction), orderByClauses, groupByClauses, pageOption, joins)
 

@@ -5,6 +5,8 @@ import scalad._
 import javax.persistence.criteria.{Predicate, JoinType}
 
 /**
+ * Yuck!
+ *
  * @author janmachacek
  */
 object CriteriaWrapper {

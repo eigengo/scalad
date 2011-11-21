@@ -20,10 +20,6 @@ trait RestrictionSimplifier {
     case x => x
   }
   
-  class SimplifierContext(seenRestrictions: List[Restriction]) {
-
-  }
-  
   private def simplifyDisjunction(d: Disjunction): Restriction = {
     (d.lhs, d.rhs) match {
       // trivial simplifications
