@@ -235,7 +235,7 @@ abstract class Restriction {
    *   val someValue = 100
    *   val query = (id ＝ 5 when someValue < 100)
    *   
-   *   // query is just Nothing()
+   *   // query is just Skip()
    * </pre>
    *
    * @param b function that must return `true` for the restriction to hold
