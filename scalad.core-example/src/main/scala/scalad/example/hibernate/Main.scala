@@ -43,8 +43,8 @@ object Main {
       val selectedUsers = users((id ＝ 5L) && (id !＝ 5L))
       println(selectedUsers)
 
-      val username = "x"  // input from the users
-      val someUsers = users((id ＝ 5L) || ("username" like username when username != ""))
+      val username = "a1%"
+      val someUsers = users((id ＝ 3L) || ("username" like username when username != ""))
       println(someUsers)
     }
 
