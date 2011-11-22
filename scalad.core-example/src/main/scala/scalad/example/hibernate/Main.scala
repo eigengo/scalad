@@ -1,9 +1,9 @@
 package scalad.example.hibernate
 
-import scalad.example.{UserAddress, User}
 import scalad.hibernate.Hibernate3
 import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
+import scalad.example.{LensedUser, UserAddress, User}
 
 /**
  * @author janmachacek
@@ -17,6 +17,7 @@ object Main {
     val sessionFactory = new Configuration()
             .configure()
             .addAnnotatedClass(classOf[User])
+            .addAnnotatedClass(classOf[LensedUser])
             .addAnnotatedClass(classOf[UserAddress])
             .buildSessionFactory();
     
@@ -39,6 +40,9 @@ object Main {
         u.persist
       }
 
+      val lu = selector(list[LensedUser])
+      lu(LensedUser.username ＝ "a")
+      
       val users = selector(list[User])
       val selectedUsers = users((id ＝ 5L) && (id !＝ 5L))
       println(selectedUsers)

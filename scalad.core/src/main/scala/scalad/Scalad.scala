@@ -71,14 +71,6 @@ object Scalad {
    */
   def id = Identity()
 
-  implicit def toPartialRestriction(property: String) = new PartialRestriction(NamedProperty(property))
-  
-  implicit def toPartialRestriction(id: Identity) = new PartialRestriction(id)
-  
 //  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil, None)
-
-  implicit def toPartialOrder(property: String) = new PartialOrder(NamedProperty(property))
-
-  implicit def toGroupBy(property: String) = GroupBy(NamedProperty(property))
 
 }
