@@ -1,0 +1,4 @@
+<plugin>
+  <name>scalad</name>
+  <classname>scalad.plugin.ScaladPlugin</classname>
+</plugin>

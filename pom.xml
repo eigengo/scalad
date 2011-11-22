@@ -26,19 +26,13 @@
 			<artifactId>aspectjweaver</artifactId>
 			<version>${aspectj.version}</version>
 		</dependency>
-		<!--
-		<dependency>
-			<groupId>com.github.gseitz.lensed</groupId>
-			<artifactId>plugin_2.9.1</artifactId>
-			<version>0.5</version>
-			<scope>compile</scope>
-		</dependency>
-		-->
 	</dependencies>
 
 	<modules>
 		<module>scalad.core</module>
 		<module>scalad.core-example</module>
+
+		<module>scalad.plugin</module>
 
 		<module>scalad.spring</module>
 		<module>scalad.spring-example</module>
