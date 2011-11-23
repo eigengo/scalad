@@ -45,19 +45,28 @@ class GenerateSynthetics(plugin: ScaladPlugin, val global: Global) extends Plugi
 
     private def generateCompanionObject(cd: ClassDef) {
       val selectorMembers = cd.impl.body.filter(shouldGenerateForMember _)
+      val moduleClass = cd.symbol.moduleClass
+      val objectName = cd.symbol.name.toTypeName
+      val objectClass = cd.symbol.companionClass //moduleClass.newExistential(moduleClass.pos.focus, objectName)
+
       selectorMembers.foreach { member =>
         val memberSym = member.symbol
+
         
-        
-        
+
         println("****** Generate selector for " + member)
       }
+      
+      println("****** Generated " + objectClass)
     }
+
     override def transform(tree: Tree): Tree = {
       val newTree = tree match {
         case cd @ ClassDef(_, _, _, _) if shouldGenerate(cd.symbol) =>
           generateCompanionObject(cd)
           cd
+        case md @ ModuleDef(mods, name, impl) if shouldGenerate(md.symbol) =>
+          md
         case _ => tree
       }
       super.transform(newTree)
