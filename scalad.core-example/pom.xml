@@ -15,6 +15,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>scalad</groupId>
+			<artifactId>plugin</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>scalad</groupId>
 			<artifactId>core</artifactId>
 			<version>0.1</version>
 		</dependency>
@@ -34,6 +39,34 @@
 			<version>4.0.0.CR5</version>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.scala-tools</groupId>
+				<artifactId>maven-scala-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>compile</goal>
+							<goal>testCompile</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<args>
+						<arg>-Xplugin:${settings.localRepository}/scalad/plugin/0.1/plugin-0.1.jar</arg>
+						<arg>-Xplugin-require:scalad</arg>
+						<arg>-deprecation</arg>
+					</args>
+					<jvmArgs>
+						<jvmArg>-Xms64m</jvmArg>
+						<jvmArg>-Xmx1024m</jvmArg>
+					</jvmArgs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
 

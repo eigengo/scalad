@@ -1,5 +1,7 @@
 package scalad
 
+import java.lang.reflect.Method
+
 /**
  * Trait to be mixed-in to ORM-like implementations
  *
@@ -7,9 +9,19 @@ package scalad
  */
 trait OrmLike {
 
+  object SetterToPropertyTranslator {
+    def translate(setter: Method) = {
+      val name = setter.getName.replaceFirst("set", "").substring(1)
+      val propertyName = Character.toLowerCase(setter.getName.charAt(3)) + name
+      // check for identity
+      
+      NamedProperty(propertyName)
+    }
+  }
+  
   private def toProperty(selectable: Selectable) = selectable match {
     case SelectableField(field) => NamedProperty(field.getName)
-    case SelectableSetter(setter) => NamedProperty(setter.getName)
+    case SelectableSetter(setter) => SetterToPropertyTranslator.translate(setter)
   }
   
   implicit def toOrmQuery(q: Query) = new OrmQuery(q.restriction, q.orderByClauses, q.groupByClauses, None, Nil)
