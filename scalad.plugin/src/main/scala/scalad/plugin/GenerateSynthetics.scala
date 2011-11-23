@@ -56,7 +56,7 @@ class GenerateSynthetics(plugin: ScaladPlugin, val global: Global) extends Plugi
 
         println("****** Generate selector for " + member)
       }
-      
+
       println("****** Generated " + objectClass)
     }
 
