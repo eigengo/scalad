@@ -28,45 +28,46 @@ class GenerateSynthetics(plugin: ScaladPlugin, val global: Global) extends Plugi
       // sym.isCaseAccessor && sym.isParamAccessor && sym.isMethod
     }
 
-    def generateSelectors(moduleClass: Symbol, caseClass: Symbol, caseClassTypeParams: List[Symbol], members: List[Tree], defaultMemberOrder: List[Tree]): List[Tree] = {
-      members.map { member =>
-        val memberSym = member.symbol
-
-        println("****** Generate selector for " + member)
-        
-        val referenceDefSym = moduleClass.newMethod(moduleClass.pos.focus, memberSym.name.toTermName)
-        referenceDefSym setFlag (SYNTHETIC)
-        moduleClass.info.decls enter referenceDefSym
-
-        // DEF(referenceDefSym) === rhs
-      }
-      List()
-    }
-
-    private def generateCompanionObject(cd: ClassDef) {
+    private def generateCompanionObject(cd: ClassDef) = {
       val selectorMembers = cd.impl.body.filter(shouldGenerateForMember _)
-      val moduleClass = cd.symbol.moduleClass
-      val objectName = cd.symbol.name.toTypeName
-      val objectClass = cd.symbol.companionClass //moduleClass.newExistential(moduleClass.pos.focus, objectName)
+      val packageSymbol = cd.symbol.owner
 
-      selectorMembers.foreach { member =>
+      val objectClass = packageSymbol.newClass(packageSymbol.pos.focus, cd.name.toTypeName)
+      objectClass setAnnotations Nil
+      objectClass setFlag SYNTHETIC
+      objectClass setInfo ClassInfoType(ScalaObjectClass.tpe :: Nil, new Scope, objectClass)
+
+      val body = selectorMembers.map { member =>
         val memberSym = member.symbol
 
-        
+        val selector = objectClass.newMethod(objectClass.pos.focus, memberSym.name.toTermName)
+        selector setFlag SYNTHETIC
+        selector setInfo MethodType(selector.newSyntheticValueParams(Nil), definitions.StringClass.tpe)
+        //selector setInfo MethodType(selector.newSyntheticValueParams(List()), selectableSetterClass.typeOfThis)
 
-        println("****** Generate selector for " + member)
+        objectClass.info.decls enter selector
+
+        DefDef(selector,
+          Return(Literal("x"))
+        )
       }
 
-      println("****** Generated " + objectClass)
+      packageSymbol.info.decls enter objectClass
+
+      val template = Template(objectClass.info.parents map TypeTree, emptyValDef, body)
+      val md = treeCopy.ModuleDef(cd, NoMods, objectClass.name, template)
+
+      md
     }
 
     override def transform(tree: Tree): Tree = {
       val newTree = tree match {
-        case cd @ ClassDef(_, _, _, _) if shouldGenerate(cd.symbol) =>
-          generateCompanionObject(cd)
+        case cd @ ClassDef(mods, name, tparams, impl) if shouldGenerate(cd.symbol) =>
+          println(cd.symbol.owner)
+          val md = generateCompanionObject(cd)
+          println("combine " + cd + " with " + md + "<<<")
+          
           cd
-        case md @ ModuleDef(mods, name, impl) if shouldGenerate(md.symbol) =>
-          md
         case _ => tree
       }
       super.transform(newTree)

@@ -20,9 +20,3 @@ class LensedUser {
   @BeanProperty
   var username: String = _
 }
-/*
-object LensedUser {
-  def id = SelectableSetter(classOf[LensedUser].getMethod("setId", classOf[Long]))
-  def username = SelectableSetter(classOf[LensedUser].getMethod("setUsername", classOf[String]))
-}
-*/

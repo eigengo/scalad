@@ -38,6 +38,12 @@
 			<artifactId>hibernate-entitymanager</artifactId>
 			<version>4.0.0.CR5</version>
 		</dependency>
+		<dependency>
+			<groupId>org.specs2</groupId>
+			<artifactId>specs2_2.9.1</artifactId>
+			<version>1.6.1</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -58,6 +64,7 @@
 						<arg>-Xplugin:${settings.localRepository}/scalad/plugin/0.1/plugin-0.1.jar</arg>
 						<arg>-Xplugin-require:scalad</arg>
 						<arg>-deprecation</arg>
+						<arg>-Ybrowse:2</arg>
 					</args>
 					<jvmArgs>
 						<jvmArg>-Xms64m</jvmArg>
