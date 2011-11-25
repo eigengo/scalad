@@ -26,7 +26,7 @@ class Selector[T, R, Q <: Query] private[scalad](execute: Selector.Execute[R, Q]
     val e = new Example(evidence.erasure.newInstance().asInstanceOf[T])
     val q = f(e.getExample)
     def translateProperty(p: Property) = p match {
-      case NamedProperty(n) => NamedProperty("username")
+      case NamedProperty(n) => NamedProperty(e.translate(n))
       case x => x
     }
     execute(q, PropertyTranslator(translateProperty _))
@@ -40,7 +40,7 @@ class Selector[T, R, Q <: Query] private[scalad](execute: Selector.Execute[R, Q]
     }
     
     def translate(name: String) = {
-      name
+      "username"
     }
   }
   
