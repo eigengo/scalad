@@ -40,11 +40,8 @@ object Main {
         u.persist
       }
 
-      val lu = selector(list[LensedUser])
-      lu(LensedUser.username ＝ "a")
-      
       val users = selector(list[User])
-      val selectedUsers = users((id ＝ 5L) && (id !＝ 5L))
+      val selectedUsers = users(u=>(u.getUsername like "a%") || (id ＝ 5L))
       println(selectedUsers)
 
       val username = "a1%"
