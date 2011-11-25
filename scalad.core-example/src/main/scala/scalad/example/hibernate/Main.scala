@@ -42,6 +42,7 @@ object Main {
 
       val users = selector(list[User])
       val selectedUsers = users(u=>(u.getUsername like "a%") || (id ＝ 5L))
+      //val selectedUsers = users(u=>(π(u.getId) like "a%") || (id ＝ 5L))
       println(selectedUsers)
 
       val username = "a1%"
