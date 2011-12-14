@@ -8,6 +8,10 @@ import org.specs2.mutable.Specification
 class QuerySpec extends Specification with OrmLike {
   import Scalad._
 
+  "none in options" in {
+    "must reduce to nothing when None"          ! restrictionMatch((id ＝ None) || ("field" ＝ None), Skip())
+  }
+
   "guard" in {
     "must reduce to nothing when `false`"       ! restrictionMatch((id ＝ "a" when false), Skip())
 

@@ -10,24 +10,6 @@ class Query (private[scalad] val restriction: Restriction,
              private[scalad] val pageOption: Option[Page]) extends RestrictionSimplifier {
 
   /**
-   * Conjoin two queries and return a new `Query` with the two queries
-   * as its parts
-   *
-   * @param q the query to be conjoined
-   * @return the conjoined query
-   */
-  def &&(q: Query) = new Query(Conjunction(this.restriction, q.restriction), orderByClauses, groupByClauses, pageOption)
-
-  /**
-   * Disjoin two queries and return a new `Query` with the two queries
-   * as its parts
-   *
-   * @param q the query to be disjoined
-   * @return the disjoined query
-   */
-  def ||(q: Query) = new Query(Disjunction(this.restriction, q.restriction), orderByClauses, groupByClauses, pageOption)
-
-  /**
    * Add an ''order by'' clause to the query
    *
    * @param o the `OrderBy` clause to be added
@@ -151,8 +133,12 @@ class PartialRestriction(val property: Property) {
    * @param value the value to be compared
    * @return `Binary` restriction
    */
-  def ＝(value: Any) = Binary(property, '==, value)
-
+  def ＝(value: Any) = value match {
+    case Some(v) => Binary(property, '==, v)
+    case None => Skip()
+    case v => Binary(property, '==, v)
+  }
+  
   /**
    * Greater than restriction: `property` `>` `value`
    *
@@ -204,7 +190,6 @@ class PartialRestriction(val property: Property) {
   /**
    * Is null restriction `property` `is null`
    *
-   * @param value the value to be compared
    * @return `IsNull` restriction
    */
   def isNull = IsNull(property)
@@ -244,7 +229,25 @@ abstract class Restriction {
     if (b) this
     else Skip()
   }
-  
+
+  /**
+   * Conjoin two queries and return a new `Restriction` with the two queries
+   * as its parts
+   *
+   * @param r the restriction to be conjoined
+   * @return the conjoined restriction
+   */
+  def &&(r: Restriction) = new Conjunction(this, r)
+
+  /**
+   * Disjoin two queries and return a new `Restriction` with the two queries
+   * as its parts
+   *
+   * @param r the restriction to be disjoined
+   * @return the disjoined restriction
+   */
+  def ||(r: Restriction) = new Disjunction(this, r)
+
 }
 
 /**
