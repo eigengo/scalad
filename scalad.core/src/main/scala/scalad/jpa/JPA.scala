@@ -74,10 +74,14 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike with
   
   def flushAndClear() { entityManager.flush(); entityManager.clear(); }
 
-  def underlyingPersist = (entity) => transactionally(getPlatformTransactionManager) { entityManager.persist(entity) }
+  def underlyingPersist[E](entity: E) {
+    transactionally(getPlatformTransactionManager) { entityManager.persist(entity) }
+  }
 
-  def underlyingDelete = (entity) => transactionally(getPlatformTransactionManager) { entityManager.remove(entity) }
-  
+  def underlyingDelete[E](entity: E) {
+    transactionally(getPlatformTransactionManager) { entityManager.remove(entity) }
+  }
+
   implicit val platformTransactionManager = getPlatformTransactionManager
 
 }

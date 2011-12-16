@@ -40,8 +40,7 @@ class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) exten
     i(r).run
   }
 
-  def underlyingPersist = (entity) => hiberanteTemplate.saveOrUpdate(entity)
+  def underlyingPersist[E](entity: E) { hiberanteTemplate.saveOrUpdate(entity) }
 
-  def underlyingDelete = (entity) => hiberanteTemplate.delete(entity)
-  
+  def underlyingDelete[E](entity: E) { hiberanteTemplate.delete(entity) }
 }

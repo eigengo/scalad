@@ -44,7 +44,7 @@ class Query (private[scalad] val restriction: Restriction,
   /**
    * Specify paging
    *
-   * @param page the page to be set
+   * @param range the page to be set
    * @return the query with the paging clause included
    */
   def page(range: Range) = new Query(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)))

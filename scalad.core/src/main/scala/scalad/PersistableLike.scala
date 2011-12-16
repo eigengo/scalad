@@ -7,13 +7,11 @@ package scalad
  * @author janmachacek
  */
 trait PersistableLike {
-  type DoPersist = (AnyRef) => Unit
-  type DoDelete = (AnyRef) => Unit
+  
+  def underlyingPersist[E](entity: E)
 
-  def underlyingPersist: DoPersist
-
-  def underlyingDelete: DoDelete
-
+  def underlyingDelete[E](entity: E)
+  
   /**
    * Persistable introduces methods that will include methods that persist or delete the object they operate on
    */
