@@ -15,13 +15,16 @@ object Main {
     cpds.setDriverClass("org.hsqldb.jdbc.JDBCDriver")
     cpds.setJdbcUrl("jdbc:hsqldb:mem:test");
     cpds.setUser("sa");
-
-    val jdbc = new MappingJDBC(cpds) with AnnotationSQL
+    
     val u = new User
     u.setId(100)
     u.setUsername("asfasfsd")
 
-    jdbc.delete(u)
+    val jdbc = new JDBC(cpds)
+    //jdbc.insert(u)
+
+    val mappingJdbc = new MappingJDBC(cpds) with AnnotationSQL
+    mappingJdbc.delete(u)
 
     new Worker(cpds).work()
   }
