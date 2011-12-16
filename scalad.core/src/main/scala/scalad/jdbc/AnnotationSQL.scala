@@ -50,7 +50,7 @@ trait AnnotationSQL extends InsertOrUpdateVoter with Inserter with Updater with 
     
     val (table, schema) = r.getAnnotation(classOf[Table]) match {
         case Some(annotation) => (annotation.name(), annotation.schema())
-        case _ => (r.simpleName, "")
+        case _ => (r.simpleName.toUpperCase, "")
       }
    
 
