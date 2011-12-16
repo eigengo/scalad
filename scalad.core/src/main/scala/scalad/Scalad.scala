@@ -1,6 +1,7 @@
 package scalad
 
 import transaction.PlatformTransactionManager
+import java.sql.ResultSet
 
 /**
  * @author janmachacek

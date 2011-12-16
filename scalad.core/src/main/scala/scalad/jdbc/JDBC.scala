@@ -1,65 +1,62 @@
 package scalad.jdbc
 
 import javax.sql.DataSource
-import java.sql.Connection
-import java.lang.InheritableThreadLocal
-import scalad.transaction.{PlatformTransaction, PlatformTransactionManager}
-import scalaz.IterV
-import scalad.PersistableLike
+import java.sql.{Statement, Connection}
 
-/**
- * @author janmachacek
- */
+trait JDBCOperations {
+  type StatementCreator[S <: Statement] = (Connection) => S
+  type StatementSetter[S <: Statement] = (S) => Unit
+  type StatementExecutor[S <: Statement, R] = (S) => R
 
-class JDBC(private val dataSource: DataSource) {
+  def execute[S <: Statement, R](statementCreator: StatementCreator[S],
+           statementSetter: StatementSetter[S],
+           statementExecutor: StatementExecutor[S, R]): R
 
-  def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
+}
+
+class JDBC(private val dataSource: DataSource) extends JDBCOperations {
+  type ConnectionOperation[R] = (Connection) => R
+
+  def withConnection[R](operation: ConnectionOperation[R]): R = {
+    val connection = dataSource.getConnection
+    try {
+      operation(connection)
+    } finally {
+      connection.commit()
+      connection.close()
+    }
+  }    
+  
+  def apply[R](operation: ConnectionOperation[R]): R = withConnection(operation)
+
+  /**
+   * Core operation
+   */
+  def execute[S <: Statement, R](statementCreator: StatementCreator[S],
+           statementSetter: StatementSetter[S],
+           statementExecutor: StatementExecutor[S, R]): R =
+    withConnection {c =>
+      val preparedStatement = statementCreator(c)
+      statementSetter(preparedStatement)
+      statementExecutor(preparedStatement)
+    }
+
+
+  // def ![R](operation: ConnectionOperation[R]): R = withConnection(operation)
+
+  def apply(entity: Any) = new Executor(entity)
+
+  class Executor(entity: Any) {
     
+    def !(sql: String) {
+      
+    }
+
   }
 
 }
 
-class MappingJDBC(dataSource: DataSource) extends JDBC(dataSource) with PersistableLike {
-  this: InsertOrUpdateVoter with Inserter with Updater with Deleter =>
-
-  def underlyingPersist[E](entity: E) {
-    if (isInsert(entity)) insert(entity, ConnectionHolder.get(dataSource)) else update(entity, ConnectionHolder.get(dataSource))
-  }
-
-  def underlyingDelete[E](entity: E) {
-    delete(entity, ConnectionHolder.get(dataSource))
-  }
-
-  def persist[E](entity: E) = underlyingDelete(entity)
-
-  def delete[E](entity: E) = underlyingDelete(entity)
-
-}
-
-trait InsertOrUpdateVoter {
-
-  def isInsert[E](entity: E): Boolean
-
-}
-
-trait Inserter {
-
-  def insert[E](entity: E, connection: Connection)
-  
-}
-
-trait Updater {
-
-  def update[E](entity: E, connection: Connection)
-  
-}
-
-trait Deleter {
-
-  def delete[E](entity: E, connection: Connection)
-
-}
-
+/*
 class JDBCPlatformTransactionManager(private val dataSource: DataSource) extends PlatformTransactionManager {
 
   def getTransaction = new JDBCPlatformTransaction(dataSource)
@@ -91,3 +88,4 @@ private[jdbc] object ConnectionHolder {
   }
 
 }
+*/
