@@ -10,7 +10,7 @@ import java.sql.Statement
 trait DDL {
   this: JDBCOperations =>
 
-  def !!(sql: String) {
+  def apply(sql: String) {
     execute[Statement, Unit](_.createStatement(), (_ => ()), (_.execute(sql)))
   }
   

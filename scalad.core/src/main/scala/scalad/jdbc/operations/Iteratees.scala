@@ -24,6 +24,7 @@ trait Iteratees {
     }
     
     def close() {
+      println("closed")
       resultSet.close()
     }
   }
@@ -32,12 +33,14 @@ trait Iteratees {
 
     @scala.annotation.tailrec
     def apply[E, A](iterator: ResultSetIterator[E], i: IterV[E, A]): IterV[E, A] = i match {
-      case _ if !iterator.hasNext => i
+      case _ if !iterator.hasNext =>
+        iterator.close()
+        i
       case Done(acc, input) =>
         iterator.close()
         i
       case Cont(k) =>
-        val x = iterator.next
+        val x = iterator.next()
         apply(iterator, k(El(x)))
     }
   }

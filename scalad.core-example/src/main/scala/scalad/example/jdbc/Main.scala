@@ -31,19 +31,19 @@ object Main {
     val jdbc = new JDBC(dataSource) with DDL with Iteratees
 
     // I want to perform arbitrary DDL
-    jdbc !! "create table USER (id INT PRIMARY KEY, version INT, name VARCHAR(200))"
-    jdbc !! "INSERT INTO USER (id, version, name) values (1, 1, 'foo')"
-    jdbc !! "INSERT INTO USER (id, version, name) values (2, 1, 'bar')"
-    jdbc !! "INSERT INTO USER (id, version, name) values (3, 1, 'baz')"
+    jdbc("create table USER (id INT PRIMARY KEY, version INT, name VARCHAR(200))")
+    jdbc("INSERT INTO USER (id, version, name) values (1, 1, 'foo')")
+    jdbc("INSERT INTO USER (id, version, name) values (2, 1, 'bar')")
+    jdbc("INSERT INTO USER (id, version, name) values (3, 1, 'baz')")
 
     val allusers = jdbc("select * from USER", list[User]) {rs => new User()}
-    val firstTwo = jdbc("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2)))) {rs=>new User()}
     println(allusers)
-    println(firstTwo)
+    //val firstTwo = jdbc("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2)))) {rs=>new User()}
+    //println(firstTwo)
 
     // I want to do a simple SQL operation, such as:
-    jdbc(u) ! "insert into USER (id, version, name) values (.id, .version, .name)"
-    jdbc(u) ! "update USER set name = .name where id = .id"
+    jdbc(u)("insert into USER (id, version, name) values (.id, .version, .name)")
+    jdbc(u)("update USER set name = .name where id = .id")
 
 
     val mappingJdbc = new MappingJDBC(dataSource) with AnnotationSQL

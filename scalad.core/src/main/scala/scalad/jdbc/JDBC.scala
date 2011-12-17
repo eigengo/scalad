@@ -42,9 +42,9 @@ class JDBC(private val dataSource: DataSource) extends JDBCOperations {
     }
 
 
-  // def ![R](operation: ConnectionOperation[R]): R = withConnection(operation)
+  def apply(entity: Any) = this
 
-  def apply(entity: Any) = new Executor(entity)
+  //new Executor(entity)
 
   class Executor(entity: Any) {
     
