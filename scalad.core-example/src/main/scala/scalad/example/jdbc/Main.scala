@@ -41,6 +41,13 @@ object Main {
     //val firstTwo = jdbc("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2)))) {rs=>new User()}
     //println(firstTwo)
 
+
+    /*
+    jdbc.insert("USER (id, name, name) values (.id, .name, .name)" | u)
+    jdbc.update("USER set name = .name where id = .id" | u)
+    jdbc.select("* FROM USER" where "username" like u.getUsername, list[User]) {rs=>new User()}
+     */
+
     // I want to do a simple SQL operation, such as:
     jdbc(u)("insert into USER (id, version, name) values (.id, .version, .name)")
     jdbc(u)("update USER set name = .name where id = .id")

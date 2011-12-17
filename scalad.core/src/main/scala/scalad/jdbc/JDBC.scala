@@ -44,16 +44,6 @@ class JDBC(private val dataSource: DataSource) extends JDBCOperations {
 
   def apply(entity: Any) = this
 
-  //new Executor(entity)
-
-  class Executor(entity: Any) {
-    
-    def !(sql: String) {
-      
-    }
-
-  }
-
 }
 
 /*
