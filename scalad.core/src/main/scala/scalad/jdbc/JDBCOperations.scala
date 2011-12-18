@@ -7,8 +7,9 @@ trait JDBCOperations {
   type StatementSetter[S <: Statement] = (S) => Unit
   type StatementExecutor[S <: Statement, R] = (S) => R
 
-  def execute[S <: Statement, R](statementCreator: StatementCreator[S],
+  def perform[S <: Statement, R](statementCreator: StatementCreator[S],
            statementSetter: StatementSetter[S],
            statementExecutor: StatementExecutor[S, R]): R
+
 
 }

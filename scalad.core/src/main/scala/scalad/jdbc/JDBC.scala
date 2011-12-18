@@ -21,7 +21,7 @@ class JDBC(private val dataSource: DataSource) extends JDBCOperations {
   /**
    * Core operation
    */
-  def execute[S <: Statement, R](statementCreator: StatementCreator[S],
+  def perform[S <: Statement, R](statementCreator: StatementCreator[S],
            statementSetter: StatementSetter[S],
            statementExecutor: StatementExecutor[S, R]): R =
     withConnection {c =>

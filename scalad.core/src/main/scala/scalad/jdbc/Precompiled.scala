@@ -5,6 +5,6 @@ package scalad.jdbc
  */
 trait Precompiled extends ExecutionPolicy {
 
-  def execute[R](f: => R): R = f
+  def execute[R <: Result](f: => R): R = f
   
 }

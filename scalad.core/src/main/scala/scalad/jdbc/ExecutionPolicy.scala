@@ -5,7 +5,8 @@ package scalad.jdbc
  */
 
 trait ExecutionPolicy {
+  type Result
 
-  def execute[R](f: => R): R
+  def execute[R <: Result](f: => R): Result
 
 }

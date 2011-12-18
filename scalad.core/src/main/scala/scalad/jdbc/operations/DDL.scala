@@ -12,7 +12,7 @@ trait DDL {
   this: JDBCOperations =>
 
   def execute(sql: String) {
-    execute[Statement, Unit](_.createStatement(), (_ => ()), (_.execute(sql)))
+    perform[Statement, Unit](_.createStatement(), (_ => ()), (_.execute(sql)))
   }
   
   def select(query: Query) = None

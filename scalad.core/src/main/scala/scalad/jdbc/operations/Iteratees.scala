@@ -53,7 +53,7 @@ trait Iteratees extends ParameterSettter {
       i(iterator).run
     }
 
-    execute[PreparedStatement, R](_.prepareStatement(query.sql), parameterSetter(query), executor)
+    perform[PreparedStatement, R](_.prepareStatement(query.sql), parameterSetter(query), executor)
   }
 
   def select[R, T](sql: String, i: IterV[T, R])(mapper: ResultSet => T) = {
@@ -63,7 +63,7 @@ trait Iteratees extends ParameterSettter {
       i(iterator).run
     }
 
-    execute[PreparedStatement, R](_.prepareStatement(sql), (_=>()), executor)
+    perform[PreparedStatement, R](_.prepareStatement(sql), (_=>()), executor)
   }
   
 }
