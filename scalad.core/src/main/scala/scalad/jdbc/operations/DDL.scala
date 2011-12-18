@@ -1,17 +1,17 @@
 package scalad.jdbc.operations
 
-import scalad.jdbc.JDBCOperations
 import java.sql.Statement
 import scalad.Query
+import scalad.jdbc.{ExecutionPolicy, JDBCOperations}
 
 /**
  * @author janmachacek
  */
 
 trait DDL {
-  this: JDBCOperations =>
+  this: JDBCOperations with ExecutionPolicy =>
 
-  def execute(sql: String) {
+  def execute(sql: String) = exec {
     perform[Statement, Unit](_.createStatement(), (_ => ()), (_.execute(sql)))
   }
   

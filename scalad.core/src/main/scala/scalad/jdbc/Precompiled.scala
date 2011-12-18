@@ -4,7 +4,7 @@ package scalad.jdbc
  * @author janmachacek
  */
 trait Precompiled extends ExecutionPolicy {
+  type Result[R] = PrecompiledStatement[R]
 
-  def execute[R <: Result](f: => R): R = f
-  
+  def exec[A](a: A) = new PrecompiledStatement[A](a)
 }

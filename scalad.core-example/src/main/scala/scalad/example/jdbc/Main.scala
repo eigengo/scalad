@@ -52,10 +52,10 @@ object Main {
     //jdbc.select("update USER set name = 'foo' where id = :id" | u)
 
     val precompiled = new JDBC(dataSource) with Precompiled with Iteratees
-    val byId = precompiled.select("SELECT * FROM USER where id=?", head[User]) {rs=>new User()}
+    val byId = precompiled.select("SELECT * FROM USER where id=1", head[User]) {rs=>new User()}
 
-    //byId(1L)
-    //byId(2L)
+    byId(1L)
+    byId(2L)
   }
 
 }

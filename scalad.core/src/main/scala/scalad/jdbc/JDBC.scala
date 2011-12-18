@@ -4,6 +4,7 @@ import javax.sql.DataSource
 import java.sql.{Statement, Connection}
 
 class JDBC(private val dataSource: DataSource) extends JDBCOperations {
+  this: ExecutionPolicy =>
   type ConnectionOperation[R] = (Connection) => R
 
   def withConnection[R](operation: ConnectionOperation[R]): R = {
@@ -16,14 +17,13 @@ class JDBC(private val dataSource: DataSource) extends JDBCOperations {
     }
   }    
   
-//  def apply[R](operation: ConnectionOperation[R]): R = withConnection(operation)
-
   /**
    * Core operation
    */
   def perform[S <: Statement, R](statementCreator: StatementCreator[S],
            statementSetter: StatementSetter[S],
            statementExecutor: StatementExecutor[S, R]): R =
+
     withConnection {c =>
       val preparedStatement = statementCreator(c)
       statementSetter(preparedStatement)
