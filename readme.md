@@ -50,9 +50,11 @@ execution of
 is `Option[User]`; the result of precompiled execution of
 
     ... with Precompiled
-    select("SELECT * FROM USER where id=?" | 1L, head[User]) {rs=>new User()}
+    select("SELECT * FROM USER where id=?", head[User]) {rs=>new User()}
 
-is `PrecompiledStatement[Option[User]]` and can be applied to arbitrary arguments:
+notice that the precompiled version does not take parameters until you apply
+the returned object, which is `PrecompiledStatement[Option[User]]` and can be applied
+to arbitrary arguments:
 
     class PrecompiledStatement[R] {
        def apply(values: Any*): R
