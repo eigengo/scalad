@@ -2,7 +2,7 @@ package scalad.spring
 
 import org.springframework.orm.hibernate3.HibernateTemplate
 import org.hibernate.criterion.DetachedCriteria
-import scalad.{PersistableLike, Query}
+import scalad.{PersistableLike, OldQuery}
 
 
 /**
@@ -21,14 +21,14 @@ class Hibernate3Template(private val hiberanteTemplate: HibernateTemplate) exten
   }
 
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
-    (q: Query) =>
+    (q: OldQuery) =>
       val criteria = DetachedCriteria.forClass(evidence.erasure)
       val r = hiberanteTemplate.findByCriteria(criteria).iterator().asInstanceOf[java.util.Iterator[T]]
 
       i(r).run
   }
 
-  def selectThat[T : ClassManifest, R](i: IterV[T, R])(q: Query) = {
+  def selectThat[T : ClassManifest, R](i: IterV[T, R])(q: OldQuery) = {
     val f = selector(i)
     f(q)
   }

@@ -4,7 +4,7 @@ package scalad
  * @author janmachacek
  */
 private[scalad] object Selector {
-  type Execute[T, Q <: Query] = (Q, PropertyTranslator) => T
+  type Execute[T, Q <: OldQuery] = (Q, PropertyTranslator) => T
 
 }
 
@@ -16,7 +16,7 @@ case class PropertyTranslator (translate: Property => Property) {
   
 }
 
-class Selector[T, R, Q <: Query] private[scalad](execute: Selector.Execute[R, Q]) {
+class Selector[T, R, Q <: OldQuery] private[scalad](execute: Selector.Execute[R, Q]) {
 
   def apply(q: Q) = {
     execute(q, PropertyTranslator(p => p))

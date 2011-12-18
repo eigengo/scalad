@@ -1,14 +1,11 @@
 package scalad.jdbc
 
 import javax.sql.DataSource
-import java.lang.InheritableThreadLocal
-import scalad.transaction.{PlatformTransaction, PlatformTransactionManager}
-import scalaz.IterV
 import scalad.PersistableLike
-import java.sql.{Statement, ResultSet, PreparedStatement, Connection}
+import java.sql.Connection
 
 class MappingJDBC(dataSource: DataSource) extends JDBC(dataSource) with PersistableLike {
-  this: InsertOrUpdateVoter with Inserter with Updater with Deleter =>
+  this: InsertOrUpdateVoter with Inserter with Updater with Deleter with ExecutionPolicy =>
 
   def underlyingPersist[E](entity: E) {
     withConnection(if (isInsert(entity)) insert(entity, _) else update(entity, _))
@@ -18,6 +15,7 @@ class MappingJDBC(dataSource: DataSource) extends JDBC(dataSource) with Persista
     withConnection(delete(entity, _))
   }
 
+/*
   override def apply(entity: Any) = new MappingExecutor(entity)
 
   class MappingExecutor(entity: Any) extends Executor(entity) {
@@ -32,6 +30,7 @@ class MappingJDBC(dataSource: DataSource) extends JDBC(dataSource) with Persista
       entity
     }
   }
+   */
 
 }
 

@@ -11,7 +11,7 @@ class OrmQuery(restriction: Restriction,
              pageOption: Option[Page],
              private[scalad] val joins: List[Join])
 
-  extends Query(restriction, orderByClauses, groupByClauses, pageOption) {
+  extends OldQuery(restriction, orderByClauses, groupByClauses, pageOption) {
 
   private def join(join: Join) = new OrmQuery(restriction, orderByClauses, groupByClauses, pageOption, join :: joins)
   

@@ -1,78 +1,36 @@
 package scalad
 
+object Query {
+  implicit def toQuery(sql: String) = new Query(sql, Skip(), Nil, Nil)
+}
 
-/**
- * Query that groups the restrictions using the appropriate binary operators
- */
-class Query (private[scalad] val restriction: Restriction,
-             private[scalad] val orderByClauses: List[OrderBy],
-             private[scalad] val groupByClauses: List[GroupBy],
-             private[scalad] val pageOption: Option[Page]) extends RestrictionSimplifier {
-
-  /**
-   * Add an ''order by'' clause to the query
-   *
-   * @param o the `OrderBy` clause to be added
-   * @return the query with the order by clause included
-   */
-  def orderBy(o: OrderBy) = new Query(restriction, o :: orderByClauses, groupByClauses, pageOption)
-
-  /**
-   * Add an ''order by asc `property`'' clause to the query
-   *
-   * @param property the `Property` that will become `OrderBy(property, Asc())`
-   * @return the query with the order by clause included
-   */
-  def orderBy(property: Property) = new Query(restriction, Asc(property) :: orderByClauses, groupByClauses, pageOption)
-
-  /**
-   * Add many ''order by'' clauses to the query
-   *
-   * @param orderBys the `OrderBy` clauses to be added
-   * @return the query with the order by clauses included
-   */
-  def orderBy(orderBys: OrderBy*) = new Query(restriction, orderBys.toList ::: orderByClauses, groupByClauses, pageOption)
-
-  /**
-   * Add many ''group by'' clauses to the query
-   *
-   * @param groupBys the `GroupBy` clause to be added
-   * @return the query with the group by clause included
-   */
-  def groupBy(groupBys: GroupBy*) = new Query(restriction, orderByClauses, groupBys.toList ::: groupByClauses, pageOption)
-
-  /**
-   * Specify paging
-   *
-   * @param range the page to be set
-   * @return the query with the paging clause included
-   */
-  def page(range: Range) = new Query(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)))
+class Query(private val query: String,
+            private val restriction: Restriction,
+            private val orderByClauses: List[OrderBy],
+            private val groupByClauses: List[GroupBy]) extends RestrictionSimplifier {
 
   /**
    * Return simplified query
    */
-  def simplify = new Query(simplifyRestriction(restriction), orderByClauses, groupByClauses, pageOption)
+  def simplify =
+      new Query(query, simplifyRestriction(restriction), orderByClauses, groupByClauses)
 
-  override def toString = {
-    val sb = new StringBuilder
-    sb.append(restriction.toString)
-    if (!orderByClauses.isEmpty) {
-      sb.append(" order by ").append(orderByClauses.toString())
-    }
-    if (!groupByClauses.isEmpty) {
-      sb.append(" group by ").append(groupByClauses.toString())
-    }
+  def where(restriction: Restriction) =
+    new Query(query, restriction, orderByClauses, groupByClauses)
 
-    sb.toString()
+  def |(template: Any) = {
+    // parse the query, find all parameters, replace with ?s, add to the map of params
+
+    this
   }
+
+  def getParameters = new QueryParameters
+
+  def sql = query
 
 }
 
-/**
- * Paging definition
- */
-final case class Page(firstRow: Int, maximumRows: Int)
+class QueryParameters
 
 /**
  * Group by clause regarding the property

@@ -2,6 +2,7 @@ package scalad.jdbc.operations
 
 import scalad.jdbc.JDBCOperations
 import java.sql.Statement
+import scalad.Query
 
 /**
  * @author janmachacek
@@ -10,8 +11,10 @@ import java.sql.Statement
 trait DDL {
   this: JDBCOperations =>
 
-  def apply(sql: String) {
+  def execute(sql: String) {
     execute[Statement, Unit](_.createStatement(), (_ => ()), (_.execute(sql)))
   }
+  
+  def select(query: Query) = None
   
 }
