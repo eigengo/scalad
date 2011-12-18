@@ -43,6 +43,7 @@ instance that I can apply multiple times to the same `Statement`:
 The `byId` is _some instance_ that can be applied to the query parameters, and it returns
 whatever the immediate query would return. In the example above, the result of immediate
 execution of
+
     ... with Immediate {
     select("SELECT * FROM USER where id=?" | 1L, head[User]) {rs=>new User()}
 
