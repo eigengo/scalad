@@ -92,4 +92,4 @@ remaining parameter, like so:
     q("Anirvan")
 
 The application returns `Option[User]` obtained by running `SELECT * FROM USER WHERE id=1 and name='Jan'` and
-`SELECT * FROM USER WHERE id=1 and name='Jan'`, respectively.
+`SELECT * FROM USER WHERE id=1 and name='Anirvan'`, respectively.
