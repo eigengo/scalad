@@ -28,7 +28,6 @@ I would like to add support for templated operations using arbitrary objects
 
 In the code above, the instance u has accessible getters or fields `id` and `name`
 
-
 ## Precompiled statements
 Particularly in high-throughput applications, I might want to use a precompiled
 `Statement` and have the various functions from the operations mixins return an
@@ -59,3 +58,38 @@ to arbitrary arguments:
     class PrecompiledStatement[R] {
        def apply(values: Any*): R
     }
+
+So far, I have a proper type system of `ExecutionPolicy`:
+
+    trait ExecutionPolicy {
+      type Result[R]
+
+      def exec[A](...): Result[A]
+    }
+
+    trait Immediate extends ExecutionPolicy {
+      type Result[R] = R
+
+      def exec[A](...) = a
+    }
+
+    trait Precompiled extends ExecutionPolicy {
+      type Result[R] = PrecompiledStatement[R]
+
+      def exec[A](...) = new PrecompiledStatement[A](a)
+    }
+
+I can also have what I call partially applied SQL with the `Precompiled` trait, allowing me
+to specify the query's parameters partially at declaration and supply the rest at application:
+
+    val q = jdbc.select("SELECT * FROM USER WHERE id=? and name like ? | 1L,
+                        head[User]){rs=>new User()}
+
+The variable `q` is now precompiled partially applicable query. To run, I must apply it to the
+remaining parameter, like so:
+
+    q("Jan")
+    q("Anirvan")
+
+The application returns `Option[User]` obtained by running `SELECT * FROM USER WHERE id=1 and name='Jan'` and
+`SELECT * FROM USER WHERE id=1 and name='Jan'`, respectively.
