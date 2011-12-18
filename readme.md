@@ -44,12 +44,12 @@ The `byId` is _some instance_ that can be applied to the query parameters, and i
 whatever the immediate query would return. In the example above, the result of immediate
 execution of
 
-    ... with Immediate {
+    ... with Immediate
     select("SELECT * FROM USER where id=?" | 1L, head[User]) {rs=>new User()}
 
 is `Option[User]`; the result of precompiled execution of
 
-    ... with Precompiled {
+    ... with Precompiled
     select("SELECT * FROM USER where id=?" | 1L, head[User]) {rs=>new User()}
 
 is `PrecompiledStatement[Option[User]]` and can be applied to arbitrary arguments:
