@@ -6,13 +6,11 @@ package scalad.jdbc
 
 class PrecompiledStatement[R](r: R) {
 
-  def apply(template: Any) = {
+  def apply(template: Any*)/*: R*/ = {
     println("Taking existing prepared statement and using it with " + template)
 
     None
   }
-
-  def apply = None
 
   def close() { }
 

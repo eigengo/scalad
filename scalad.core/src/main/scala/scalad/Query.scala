@@ -18,7 +18,7 @@ class Query(private val query: String,
   def where(restriction: Restriction) =
     new Query(query, restriction, orderByClauses, groupByClauses)
 
-  def |(template: Any) = {
+  def |(template: Any*) = {
     // parse the query, find all parameters, replace with ?s, add to the map of params
 
     this

@@ -5,6 +5,8 @@ import com.mchange.v2.c3p0.ComboPooledDataSource
 import scalad.Scalad
 import scalad.jdbc.operations.{Iteratees, DDL}
 import scalad.jdbc.{Immediate, Precompiled, JDBC}
+import java.sql.ResultSet
+import scalaz.Scalaz
 
 /**
  * @author janmachacek
@@ -33,13 +35,21 @@ object Main {
     jdbc.execute("INSERT INTO USER (id, version, name) values (2, 1, 'bar')")
     jdbc.execute("INSERT INTO USER (id, version, name) values (3, 1, 'baz')")
 
-    val allusers = jdbc.select("select * from USER", list[User]) {rs => new User()}
-    println(allusers)
-    //val firstTwo = jdbc.select("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2)))) {rs=>new User()}
-    //println(firstTwo)
+    val mapper = (rs: ResultSet) => {
+      val u = new User
+      u.setId(rs.getLong("id"))
+      u.setUsername(rs.getString("name"))
 
-    val id1 = jdbc.select("select * from USER where id = 1" | u, head[User]) {rs=>new User()}
-    println(id1)
+      u
+    }
+    
+    val allusers = jdbc.select("select * from USER", list[User])(mapper)
+    println(allusers)
+//    val firstTwo = jdbc.select("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2))))(mapper)
+//    println(firstTwo)
+
+    val id1 = jdbc.select("select * from USER where id = 1" | u, head[User])(mapper)
+    println(id1.get)
 
     /*
     jdbc.insert("USER (id, name, name) values (.id, .name, .name)" | u)
@@ -53,7 +63,7 @@ object Main {
 
     val precompiled = new JDBC(dataSource) with Precompiled with Iteratees
     val byId =
-      precompiled.select("SELECT * FROM USER where id=? and name=?" | 1L, head[User]) {rs=>new User()}
+      precompiled.select("SELECT * FROM USER where id=? and name=?" | (1L, "foo"), head[User])(mapper)
 
     byId("foo")
     byId("bar")
