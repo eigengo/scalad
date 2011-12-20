@@ -3,7 +3,7 @@
 <book>
 	<bookinfo>
 		<title>Reference Documentation</title>
-		<productname>Specs2 Spring</productname>
+		<productname>Scalad</productname>
 		<releaseinfo>1.0</releaseinfo>
 		<!--
 		<mediaobject>
@@ -49,23 +49,27 @@
 	<toc/>
 
 	<part>
-		<title>Overview of Specs2 Spring</title>
+		<title>Overview of Scalad</title>
 		<xi:include href="introduction.xml"
 					xmlns:xi="http://www.w3.org/2001/XInclude" />
 	</part>
 
 	<part>
-		<title>Using Specs2 Spring</title>
-		<xi:include href="using.xml"
+		<title>Principles &amp; patterns of Scalad</title>
+		<xi:include href="query.xml"
 					xmlns:xi="http://www.w3.org/2001/XInclude" />
-		<xi:include href="large-systems.xml"
+		<xi:include href="patterns.xml"
 					xmlns:xi="http://www.w3.org/2001/XInclude" />
 	</part>
 
-	<part id="spring-appendices">
-	  <title>What's next?</title>
-
-	  <xi:include href="whats-next.xml"
-				  xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<part>
+		<title>JDBC</title>
+		<xi:include href="jdbc.xml"
+					xmlns:xi="http://www.w3.org/2001/XInclude" />
+	</part>
+	<part>
+		<title>Raw Hibernate</title>
+		<xi:include href="hibernate.xml"
+					xmlns:xi="http://www.w3.org/2001/XInclude" />
 	</part>
 </book>

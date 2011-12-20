@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <chapter id="using">
-	<title>Using Specs2 Spring Specification</title>
+	<title>Using Scalad</title>
 
 	<section>
-		<title>Using Specs2 Spring</title>
+		<title>Using Scalad</title>
 		<para>To configure the Spring <interfacename>ApplicationContext</interfacename>, you
 			need to use the <code>ContextConfiguration</code> annotation on a subclass of the
 			<classname>org.specs2.spring.Specification</classname>. The code in the
