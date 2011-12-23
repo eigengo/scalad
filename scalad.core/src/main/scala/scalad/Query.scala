@@ -1,29 +1,14 @@
 package scalad
 
-object Query {
-  implicit def toQuery(sql: String) =
-    new Query(sql, Array(), Skip(), Nil, Nil)
-}
-
-trait Restricted {
-  def restriction(implicit simplifier: RestrictionSimplifier): Restriction
-}
-
 class Query(private[scalad] val query: String,
-            private[scalad] val params: Array[Any],
-            private[scalad] val restriction_ : Restriction,
+            private[this] val params: Seq[Any],
+            private[scalad] val restriction: Restriction,
             private[scalad] val orderByClauses: List[OrderBy],
-            private[scalad] val groupByClauses: List[GroupBy]) extends Restricted {
+            private[scalad] val groupByClauses: List[GroupBy]) {
 
-  def restriction(implicit simplifier: RestrictionSimplifier) = simplifier.simplifyRestriction(restriction_)
+  def where(restriction: Restriction) = new Query(query, params, restriction, orderByClauses, groupByClauses)
 
-  def where(restriction: Restriction) =
-    new Query(query, params, restriction, orderByClauses, groupByClauses)
-
-  def |(template: Any*) = new Query(query, params, restriction_, orderByClauses, groupByClauses)
-
-  def sql = query
-
+  def |(params: Any*) = new Query(query, params, restriction, orderByClauses, groupByClauses)
 }
 
 /**

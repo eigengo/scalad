@@ -13,7 +13,7 @@ object Scalad {
   import scalaz.IterV
 
   implicit val defaultRestrictionSimplifier = new DefaultRestrictionSimplifier
-  
+
   implicit val javaIteratorEnumerator = new Enumerator[java.util.Iterator] {
 
     @scala.annotation.tailrec
@@ -73,4 +73,9 @@ object Scalad {
    */
   def id = Identity()
 
+  implicit def toQuery(sql: String) = new Query(sql, Nil, Skip(), Nil, Nil)
+
+  implicit def toExecutableQuery(sql: String) = toExecutableQuery(toQuery(sql))
+
+  implicit def toExecutableQuery(q: Query) = new ExecutableQuery(q)
 }

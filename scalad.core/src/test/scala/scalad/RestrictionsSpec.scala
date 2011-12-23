@@ -48,6 +48,7 @@ class RestrictionsSpec extends Specification with OrmLike {
     "remove dups in foo=a || foo in(a, b, c)"   ! restrictionMatch(("foo" ＝ "a") || ("foo" isIn("a", "b", "c")), ("foo" isIn("a", "b", "c")))
   }
 
-  private def restrictionMatch(q: OldQuery, r: Restriction) = q.restriction must_== r
+  private def restrictionMatch(rr: Restriction, r: Restriction)(implicit simplifier: RestrictionSimplifier) =
+    simplifier.simplifyRestriction(rr) must_== r
 
 }

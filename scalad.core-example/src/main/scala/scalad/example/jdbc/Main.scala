@@ -15,7 +15,6 @@ object Main {
 
   import scalaz.IterV._
   import Scalad._
-  import scalad.Query._
 
   def main(args: Array[String]) {
     val dataSource = new ComboPooledDataSource();
