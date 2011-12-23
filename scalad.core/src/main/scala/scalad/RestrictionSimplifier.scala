@@ -12,8 +12,12 @@ package scalad
  * @author janmachacek
  */
 trait RestrictionSimplifier {
+  def simplifyRestriction(r: Restriction): Restriction
+}
 
-  protected def simplifyRestriction(r: Restriction) = r match {
+class DefaultRestrictionSimplifier extends RestrictionSimplifier {
+
+  def simplifyRestriction(r: Restriction) = r match {
     case d: Disjunction => simplifyDisjunction(d)
     case c: Conjunction => simplifyConjunction(c)
     case In(property, values) if (values.isEmpty) => Contradiction()

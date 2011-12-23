@@ -27,8 +27,6 @@ class OrmQuery(restriction: Restriction,
 
   def fetch(path: String) = join(Join(Path(path, path), true, true))
 
-  override def simplify = new OrmQuery(simplifyRestriction(restriction), orderByClauses, groupByClauses, pageOption, joins)
-
   override def page(range: Range) = new OrmQuery(restriction, orderByClauses, groupByClauses, Some(Page(range.start, range.end)), joins)
 }
 

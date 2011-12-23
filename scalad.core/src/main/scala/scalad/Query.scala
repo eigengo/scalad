@@ -1,36 +1,30 @@
 package scalad
 
 object Query {
-  implicit def toQuery(sql: String) = new Query(sql, Skip(), Nil, Nil)
+  implicit def toQuery(sql: String) =
+    new Query(sql, Array(), Skip(), Nil, Nil)
 }
 
-class Query(private val query: String,
-            private val restriction: Restriction,
-            private val orderByClauses: List[OrderBy],
-            private val groupByClauses: List[GroupBy]) extends RestrictionSimplifier {
+trait Restricted {
+  def restriction(implicit simplifier: RestrictionSimplifier): Restriction
+}
 
-  /**
-   * Return simplified query
-   */
-  def simplify =
-      new Query(query, simplifyRestriction(restriction), orderByClauses, groupByClauses)
+class Query(private[scalad] val query: String,
+            private[scalad] val params: Array[Any],
+            private[scalad] val restriction_ : Restriction,
+            private[scalad] val orderByClauses: List[OrderBy],
+            private[scalad] val groupByClauses: List[GroupBy]) extends Restricted {
+
+  def restriction(implicit simplifier: RestrictionSimplifier) = simplifier.simplifyRestriction(restriction_)
 
   def where(restriction: Restriction) =
-    new Query(query, restriction, orderByClauses, groupByClauses)
+    new Query(query, params, restriction, orderByClauses, groupByClauses)
 
-  def |(template: Any*) = {
-    // parse the query, find all parameters, replace with ?s, add to the map of params
-
-    this
-  }
-
-  def getParameters = new QueryParameters
+  def |(template: Any*) = new Query(query, params, restriction_, orderByClauses, groupByClauses)
 
   def sql = query
 
 }
-
-class QueryParameters
 
 /**
  * Group by clause regarding the property

@@ -48,8 +48,7 @@ class JPA(private val entityManager: EntityManager) extends PersistableLike with
 
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
     (q: OrmQuery) =>
-      val simplifiedQuery = q.simplify
-      val query = CriteriaWrapper.getQuery(simplifiedQuery, entityManager, evidence.erasure)
+      val query = CriteriaWrapper.getQuery(q, entityManager, evidence.erasure)
 
       val r = query.getResultList.iterator().asInstanceOf[java.util.Iterator[T]]
       i(r).run

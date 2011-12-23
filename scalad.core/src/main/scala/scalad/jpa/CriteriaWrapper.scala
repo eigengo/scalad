@@ -11,6 +11,8 @@ import javax.persistence.criteria.{Predicate, JoinType}
  */
 object CriteriaWrapper {
 
+  import Scalad._
+
   def getQuery[T](query: OrmQuery, entityManager: EntityManager, entityType: Class[T]) = {
     val cb = entityManager.getCriteriaBuilder
     val criteriaQuery = cb.createQuery(entityType)

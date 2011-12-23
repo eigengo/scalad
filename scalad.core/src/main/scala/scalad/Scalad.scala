@@ -1,7 +1,6 @@
 package scalad
 
 import transaction.PlatformTransactionManager
-import java.sql.ResultSet
 
 /**
  * @author janmachacek
@@ -13,6 +12,8 @@ object Scalad {
   import scalaz.Enumerator
   import scalaz.IterV
 
+  implicit val defaultRestrictionSimplifier = new DefaultRestrictionSimplifier
+  
   implicit val javaIteratorEnumerator = new Enumerator[java.util.Iterator] {
 
     @scala.annotation.tailrec
@@ -71,7 +72,5 @@ object Scalad {
    * @return the {{Identity}} property
    */
   def id = Identity()
-
-//  implicit def toQuery(restriction: Restriction) = new Query(restriction, Nil, Nil, None)
 
 }

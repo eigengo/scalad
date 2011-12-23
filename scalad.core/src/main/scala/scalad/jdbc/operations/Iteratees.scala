@@ -56,6 +56,6 @@ trait Iteratees extends ParameterSettter {
     perform[PreparedStatement, R](_.prepareStatement(query.sql), parameterSetter(query), executor)
   }
 
-  def select[R, T](sql: String, i: IterV[T, R])(mapper: ResultSet => T) = select[R, T](new Query(sql, Skip(), Nil, Nil), i)(mapper)
+  def select[R, T](sql: String, i: IterV[T, R])(mapper: ResultSet => T) = select[R, T](new Query(sql, Array(), Skip(), Nil, Nil), i)(mapper)
 
 }

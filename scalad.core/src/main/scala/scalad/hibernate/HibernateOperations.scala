@@ -15,8 +15,6 @@ abstract class HibernateOperations(private val sessionFactory: SessionFactory) {
   def selector[T, R](i: IterV[T, R])(implicit evidence: ClassManifest[T]) = {
     new Selector[T, R, OrmQuery]({
       (q, t) =>
-        val simplifiedQuery = q.simplify
-
         val session = sessionFactory.openStatelessSession()
         val criteria = session.createCriteria(evidence.erasure)
 
@@ -44,12 +42,12 @@ abstract class HibernateOperations(private val sessionFactory: SessionFactory) {
         }
 
         // joins
-        simplifiedQuery.joins.foreach {
+        q.joins.foreach {
           join =>
             if (join.eager) criteria.setFetchMode(join.path.expression, FetchMode.JOIN)
         }
 
-        simplifiedQuery.orderByClauses.foreach(_ match {
+        q.orderByClauses.foreach(_ match {
           case Asc(NamedProperty(p)) => criteria.addOrder(Order.asc(p))
           case Desc(NamedProperty(p)) => criteria.addOrder(Order.desc(p))
           // order by ids!
@@ -57,7 +55,7 @@ abstract class HibernateOperations(private val sessionFactory: SessionFactory) {
 
         // group bys
 
-        val results = simplifiedQuery.restriction match {
+        val results = q.restriction match {
           case Contradiction() => new java.util.ArrayList[T]().iterator()
           case r => getCriterion(r) match {
             case Some(r2) =>
