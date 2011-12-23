@@ -75,7 +75,7 @@ object Scalad {
 
   implicit def toQuery(sql: String) = new Query(sql, Nil, Skip(), Nil, Nil)
 
-  implicit def toExecutableQuery(sql: String) = toExecutableQuery(toQuery(sql))
+  implicit def toExecutableQuery(sql: String) = PreparedQuery(toQuery(sql))
 
-  implicit def toExecutableQuery(q: Query) = new ExecutableQuery(q)
+  implicit def toPreparedQuery(q: Query) = PreparedQuery(q)
 }

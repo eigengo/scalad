@@ -1,14 +1,14 @@
 package scalad.jdbc.operations
 
-import scalad.ExecutableQuery
 import java.sql.Statement
+import scalad.PreparedQuery
 
 /**
  * @author janmachacek
  */
 private[operations] trait ParameterSetter {
 
-  def parameterSetter[S <: Statement](query: ExecutableQuery) = { ps: S =>
+  def parameterSetter[S <: Statement](query: PreparedQuery) = { ps: S =>
     println("Setting parameters...")
   }
 

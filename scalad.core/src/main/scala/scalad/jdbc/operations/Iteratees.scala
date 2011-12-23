@@ -2,7 +2,7 @@ package scalad.jdbc.operations
 
 import java.sql.{ResultSet, PreparedStatement}
 import scalad.jdbc.{ExecutionPolicy, JDBCOperations}
-import scalad.{ExecutableQuery, Skip, Query}
+import scalad.PreparedQuery
 
 /**
  * @author janmachacek
@@ -46,7 +46,7 @@ trait Iteratees extends ParameterSetter {
     }
   }
 
-  def select[R, T](query: ExecutableQuery, i: IterV[T, R])(mapper: ResultSet => T) = exec {
+  def select[R, T](query: PreparedQuery, i: IterV[T, R])(mapper: ResultSet => T) = exec {
     val executor = (ps: PreparedStatement) => {
       val rs: ResultSet = ps.executeQuery()
       val iterator = new ResultSetIterator[T](rs, mapper)

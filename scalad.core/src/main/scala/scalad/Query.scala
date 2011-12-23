@@ -1,14 +1,16 @@
 package scalad
 
 class Query(private[scalad] val query: String,
-            private[this] val params: Seq[Any],
+            private[scalad] val parameters: Seq[Any],
             private[scalad] val restriction: Restriction,
             private[scalad] val orderByClauses: List[OrderBy],
             private[scalad] val groupByClauses: List[GroupBy]) {
 
-  def where(restriction: Restriction) = new Query(query, params, restriction, orderByClauses, groupByClauses)
+  def where(restriction: Restriction) = new Query(query, parameters, restriction, orderByClauses, groupByClauses)
 
   def |(params: Any*) = new Query(query, params, restriction, orderByClauses, groupByClauses)
+  
+  def prepare = PreparedQuery(this)
 }
 
 /**
