@@ -10,7 +10,7 @@ class Query(private[scalad] val query: String,
 
   def |(params: Any*) = new Query(query, params, restriction, orderByClauses, groupByClauses)
   
-  def prepare = PreparedQuery(this)
+  def prepare(implicit simplifier: RestrictionSimplifier) = PreparedQuery(this)
 }
 
 /**

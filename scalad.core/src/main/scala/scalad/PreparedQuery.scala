@@ -7,9 +7,9 @@ object PreparedQuery {
 
   def apply(rawQuery: Query)(implicit simplifier: RestrictionSimplifier) = {
     abstract case class Token(position: Int)
-    case class Start() extends Token(0)
+    case class Start() extends Token(-1)
     case class Mid(position_ : Int, text: String) extends Token(position_)
-    case class End(text: String) extends Token(0)
+    case class End(text: String) extends Token(Int.MaxValue)
 
     val queryText: String = rawQuery.query
 
