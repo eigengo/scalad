@@ -26,8 +26,7 @@ class PreparedQuerySpec extends Specification {
   }
 
   "query with named & duplicate params only" in {
-    val t = "select * from user where id=:id or name like :name or name = upper(:name)"
-    val q: PreparedQuery = t
+    val q: PreparedQuery = "select * from user where id=:id or name like :name or name = upper(:name)"
     "replaced named with ?" in {
       q.query must_== "select * from user where id=? or name like ? or name = upper(?)"
     }
@@ -38,8 +37,7 @@ class PreparedQuerySpec extends Specification {
   }
 
   "query with property-styled & duplicate named params only" in {
-    val t = "select * from user where id=:u.id or name like :u.name or name = upper(:u.name)"
-    val q: PreparedQuery = t
+    val q: PreparedQuery = "select * from user where id=:u.id or name like :u.name or name = upper(:u.name)"
     "replaced named with ?" in {
       q.query must_== "select * from user where id=? or name like ? or name = upper(?)"
     }
