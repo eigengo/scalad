@@ -10,6 +10,34 @@ object PreparedQuery {
     case class Start() extends Token(-1)
     case class Mid(position_ : Int, text: String) extends Token(position_)
     case class End(text: String) extends Token(Int.MaxValue)
+    
+    class StringIterator(private[this] val s: String, private[this] val start: Int) {
+      private var i = start
+      
+      def hasNext = i < s.length()
+
+      def next(n: Int) {
+        i = i + n
+      }
+
+      def apply() = {
+        s.charAt(i)
+      }
+      
+      def apply(n: Int) = {
+        if (i + n > 0 && i < s.length() - n) Some(s.charAt(i + n)) else None
+      }
+      
+      def position = i
+
+      override def toString = {
+        val sb = new StringBuffer(s)
+        val c = sb.charAt(i)
+        sb.setCharAt(i, c.toUpper)
+
+        sb.toString
+      }
+    }
 
     val queryText: String = rawQuery.query
 
@@ -17,36 +45,50 @@ object PreparedQuery {
       val text = new StringBuffer
       var openString: Boolean = false
       var openEscape: Boolean = false
-      val start = token.position + 1
+      val it = new StringIterator(queryText, token.position + 1)
 
-      for (i <- start until queryText.length()) {
-        val c = queryText.charAt(i)
-        if (c == '\\' && !openEscape) openEscape = !openEscape
-        if (c == '\'' && !openEscape) openString = !openString
-
+      while (it.hasNext) {
+        if (it() == '\\') {
+          it(1) match {
+            case Some('\\') => it.next(2)  // we have \, if next is \, nowt
+            case Some('?')  => it.next(2)  // we have \, if next is ?, nowt
+            case Some(':')  => it.next(2)  // we have \, if next is :, nowt
+            case Some('\'') => it.next(2)  // we have \, if next is ', nowt
+            case _ => openEscape = !openEscape
+          }
+        } 
+        if (it() == '\'') {
+          it(1) match {
+            case Some('\'') => it.next(2)  // we have ', if next is ', nowt
+            case _ => openString = !openString
+          }
+        }
+        
         if (!openEscape && !openString) {
           if (text.length() > 0) {
-            c match {
-              case '?' => return Mid(i, "?")
-              case ' ' => return Mid(i, text.toString)
-              case '=' => return Mid(i, text.toString)
-              case '<' => return Mid(i, text.toString)
-              case '>' => return Mid(i, text.toString)
-              case '!' => return Mid(i, text.toString)
-              case '(' => return Mid(i, text.toString)
-              case ')' => return Mid(i, text.toString)
+            it() match {
+              case '?' => return Mid(it.position, "?")
+              case ' ' => return Mid(it.position, text.toString.trim())
+              case '=' => return Mid(it.position, text.toString.trim())
+              case '<' => return Mid(it.position, text.toString.trim())
+              case '>' => return Mid(it.position, text.toString.trim())
+              case '!' => return Mid(it.position, text.toString.trim())
+              case '(' => return Mid(it.position, text.toString.trim())
+              case ')' => return Mid(it.position, text.toString.trim())
               case _ =>
             }
           }
-          text.append(c)
+          text.append(it())
         }
-      }
 
-      End(text.toString)
+        it.next(1)
+      }
+      End(text.toString.trim())
     }
 
     def loop(token: Token, position: Int, params: Seq[PreparedQueryParameter]): Seq[PreparedQueryParameter] = {
       next(token) match {
+        case t@Mid(_, "") => loop(t, position, params)
         case t@Mid(_, text) =>
           text.charAt(0) match {
             case ':' => NamedPreparedQueryParameter(text, position) +: loop(t, position + 1, params)
