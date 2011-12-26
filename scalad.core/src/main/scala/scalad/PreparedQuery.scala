@@ -9,7 +9,8 @@ object PreparedQuery {
     abstract case class Token(position: Int)
     case class Start() extends Token(-1)
     case class Mid(position_ : Int, text: String) extends Token(position_)
-    case class End(text: String) extends Token(Int.MaxValue)
+    case class End(position_ : Int, text: String) extends Token(position_)
+    case class ParameterWithPosition(parameter: PreparedQueryParameter, position: Int)
     
     class StringIterator(private[this] val s: String, private[this] val start: Int) {
       private var i = start
@@ -83,38 +84,43 @@ object PreparedQuery {
 
         it.next(1)
       }
-      End(text.toString.trim())
+      End(it.position, text.toString.trim())
     }
 
-    def loop(token: Token, position: Int, params: Seq[PreparedQueryParameter]): Seq[PreparedQueryParameter] = {
+    def loop(token: Token, position: Int, params: Seq[ParameterWithPosition]): Seq[ParameterWithPosition] = {
       next(token) match {
-        case t@Mid(_, "") => loop(t, position, params)
-        case t@Mid(_, text) =>
+        case t@Mid(p, "") => loop(t, position, params)
+        case t@Mid(p, text) =>
           text.charAt(0) match {
-            case ':' => NamedPreparedQueryParameter(text, position) +: loop(t, position + 1, params)
-            case '?' => PositionalPreparedQueryParameter(position) +: loop(t, position + 1, params)
+            case ':' => ParameterWithPosition(NamedPreparedQueryParameter(text, position), p) +: loop(t, position + 1, params)
+            case '?' => ParameterWithPosition(PositionalPreparedQueryParameter(position), p) +: loop(t, position + 1, params)
             case _ => loop(t, position, params)
           }
-        case End("") => params
-        case End(text) =>
+        case End(_, "") => params
+        case End(p, text) =>
           text.charAt(0) match {
-            case ':' => NamedPreparedQueryParameter(text, position) +: params
-            case '?' => PositionalPreparedQueryParameter(position) +: params
+            case ':' => ParameterWithPosition(NamedPreparedQueryParameter(text, position), p) +: params
+            case '?' => ParameterWithPosition(PositionalPreparedQueryParameter(position), p) +: params
             case _ => params
           }
       }
     }
 
     val params = loop(Start(), 0, Nil)
-    var positionalQuery = queryText
+    val positionalQuery = new StringBuffer(queryText)
     params.foreach { p =>
       p match {
-        case NamedPreparedQueryParameter(name, _) => positionalQuery = positionalQuery.replace(name, "?")
+        case ParameterWithPosition(NamedPreparedQueryParameter(name, _), position) =>
+          val i = positionalQuery.indexOf(name, position - name.length())
+          if (i != -1) {
+            positionalQuery.setCharAt(i, '?')
+            for (j <- 1 to name.length() - 1) positionalQuery.setCharAt(i + j, ' ')
+          }
         case _ =>
       }
     }
 
-    new PreparedQuery(positionalQuery, params,
+    new PreparedQuery(positionalQuery.toString, params.map (_.parameter),
       simplifier.simplifyRestriction(rawQuery.restriction),
       rawQuery.orderByClauses, rawQuery.groupByClauses)
   }

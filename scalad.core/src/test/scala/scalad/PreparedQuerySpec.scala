@@ -28,7 +28,7 @@ class PreparedQuerySpec extends Specification {
   "query with named & duplicate params only" in {
     val q: PreparedQuery = "select * from user where id=:id or name like :name or name = upper(:name)"
     "replaced named with ?" in {
-      q.query must_== "select * from user where id=? or name like ? or name = upper(?)"
+      q.query must_== "select * from user where id=?   or name like ?     or name = upper(?    )"
     }
     "three named parameters" in {
       q.parameters must_== List(NamedPreparedQueryParameter(":id", 0), NamedPreparedQueryParameter(":name", 1),
@@ -39,7 +39,7 @@ class PreparedQuerySpec extends Specification {
   "query with property-styled & duplicate named params only" in {
     val q: PreparedQuery = "select * from user where id=:u.id or name like :u.name or name = upper(:u.name)"
     "replaced named with ?" in {
-      q.query must_== "select * from user where id=? or name like ? or name = upper(?)"
+      q.query must_== "select * from user where id=?     or name like ?       or name = upper(?      )"
     }
     "three named parameters" in {
       q.parameters must_== List(NamedPreparedQueryParameter(":u.id", 0), NamedPreparedQueryParameter(":u.name", 1),
@@ -50,7 +50,7 @@ class PreparedQuerySpec extends Specification {
   "query with named & positional parameters" in {
     val q: PreparedQuery = "select * from user where id=:u.id or id > ? or name like :u.name or name = upper(:u.name)"
     "replaced named with ?" in {
-      q.query must_== "select * from user where id=? or id > ? or name like ? or name = upper(?)"
+      q.query must_== "select * from user where id=?     or id > ? or name like ?       or name = upper(?      )"
     }
     "three named parameters" in {
       q.parameters must_== List(NamedPreparedQueryParameter(":u.id", 0), PositionalPreparedQueryParameter(1),
@@ -61,20 +61,17 @@ class PreparedQuerySpec extends Specification {
   "query with varchars and escapes" in {
     val q: PreparedQuery = "update user set name = 'foo=:foo \\' bar baz' where id=:id or name like ?"
     "replaced named with ?" in {
-      q.query must_== "update user set name = 'foo=:foo \\' bar baz' where id=? or name like ?"
+      q.query must_== "update user set name = 'foo=:foo \\' bar baz' where id=?   or name like ?"
     }
     "three named parameters" in {
       q.parameters must_== List(NamedPreparedQueryParameter(":id", 0), PositionalPreparedQueryParameter(1))
     }
   }
 
-  // This is still broken the text in the escape uses :id, but there is also a parameter called
-  // :id. Only the 'real' parameter should be turned into ?, obviously.
-  // ATM, all :id parameters get turned into ?
   "query with varchars and escapes and 'same' name in escape" in {
     val q: PreparedQuery = "update user set name = 'id=:id \\' bar baz' where id=:id or name like ?"
     "replaced named with ?" in {
-      q.query must_== "update user set name = 'id=:id \\' bar baz' where id=? or name like ?"
+      q.query must_== "update user set name = 'id=:id \\' bar baz' where id=?   or name like ?"
     }
     "three named parameters" in {
       q.parameters must_== List(NamedPreparedQueryParameter(":id", 0), PositionalPreparedQueryParameter(1))
