@@ -1,8 +1,8 @@
 package scalad.jdbc.operations
 
 import java.sql.{ResultSet, PreparedStatement}
-import scalad.jdbc.{ExecutionPolicy, JDBCOperations}
 import scalad.PreparedQuery
+import scalad.jdbc.{ExecutionPolicy, JDBCOperations}
 
 /**
  * @author janmachacek

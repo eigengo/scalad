@@ -119,22 +119,43 @@ object PreparedQuery {
       }
     }
 
-    new PreparedQuery(positionalQuery.toString, params.map (_.parameter),
+    new PreparedQuery(positionalQuery.toString, rawQuery.parameters,
       simplifier.simplifyRestriction(rawQuery.restriction),
-      rawQuery.orderByClauses, rawQuery.groupByClauses)
+      rawQuery.orderByClauses, rawQuery.groupByClauses,
+      params.map (_.parameter)
+    )
   }
 
 }
 
 class PreparedQuery private(private[scalad] val query: String,
-                            private[scalad] val parameters: Iterable[PreparedQueryParameter],
+                            private[scalad] val parameters: Seq[Any],
                             private[scalad] val restriction: Restriction,
                             private[scalad] val orderByClauses: List[OrderBy],
-                            private[scalad] val groupByClauses: List[GroupBy]) {
+                            private[scalad] val groupByClauses: List[GroupBy],
+                            private[scalad] val queryParameters: Iterable[PreparedQueryParameter]) {
 
+  private def parameterValue(index: Int) = {
+    parameters(index)
+  }
+
+  private def parameterValue(name: String) = None
+
+  def foreachParams(f: (SettableParameter[_]) => Any) {
+    queryParameters.foreach {p=>
+      p match {
+        case PositionalPreparedQueryParameter(index) =>
+          f(SettableParameter(index, parameterValue(index)))
+        case NamedPreparedQueryParameter(name, index) =>
+          f(SettableParameter(index, parameterValue(name)))
+      }
+    }
+  }
 
 }
 
-abstract case class PreparedQueryParameter()
+sealed case class SettableParameter[A](index: Int, value: A)
+
+abstract sealed case class PreparedQueryParameter()
 case class PositionalPreparedQueryParameter(position: Int) extends PreparedQueryParameter
 case class NamedPreparedQueryParameter(name: String, position: Int) extends PreparedQueryParameter

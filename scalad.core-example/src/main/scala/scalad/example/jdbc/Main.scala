@@ -4,9 +4,9 @@ import scalad.example.User
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import scalad.Scalad
 import scalad.jdbc.operations.{Iteratees, DDL}
-import scalad.jdbc.{Immediate, Precompiled, JDBC}
 import java.sql.ResultSet
 import scalaz.Scalaz
+import scalad.jdbc.{AnnotationMapper, Immediate, Precompiled, JDBC}
 
 /**
  * @author janmachacek
@@ -47,8 +47,11 @@ object Main {
 //    val firstTwo = jdbc.select("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2))))(mapper)
 //    println(firstTwo)
 
-    val id1 = jdbc.select("select * from USER where id = 1" | u, head[User])(mapper)
+    val id1 = jdbc.select("select * from USER where id = ?" | 1L, head[User])(mapper)
     println(id1.get)
+
+    val mappedJdbc = new JDBC(dataSource) with Iteratees with Immediate with AnnotationMapper
+    val allMapped = jdbc.select("select * from USER", list[User])
 
     /*
     jdbc.insert("USER (id, name, name) values (.id, .name, .name)" | u)

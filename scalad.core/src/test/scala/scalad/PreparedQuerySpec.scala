@@ -21,7 +21,7 @@ class PreparedQuerySpec extends Specification {
       q.query must_== t
     }
     "two positional parameters" in {
-      q.parameters must_== List(PositionalPreparedQueryParameter(0), PositionalPreparedQueryParameter(1))
+      q.queryParameters must_== List(PositionalPreparedQueryParameter(0), PositionalPreparedQueryParameter(1))
     }
   }
 
@@ -31,7 +31,7 @@ class PreparedQuerySpec extends Specification {
       q.query must_== "select * from user where id=?   or name like ?     or name = upper(?    )"
     }
     "three named parameters" in {
-      q.parameters must_== List(NamedPreparedQueryParameter(":id", 0), NamedPreparedQueryParameter(":name", 1),
+      q.queryParameters must_== List(NamedPreparedQueryParameter(":id", 0), NamedPreparedQueryParameter(":name", 1),
                                 NamedPreparedQueryParameter(":name", 2))
     }
   }
@@ -42,7 +42,7 @@ class PreparedQuerySpec extends Specification {
       q.query must_== "select * from user where id=?     or name like ?       or name = upper(?      )"
     }
     "three named parameters" in {
-      q.parameters must_== List(NamedPreparedQueryParameter(":u.id", 0), NamedPreparedQueryParameter(":u.name", 1),
+      q.queryParameters must_== List(NamedPreparedQueryParameter(":u.id", 0), NamedPreparedQueryParameter(":u.name", 1),
                                 NamedPreparedQueryParameter(":u.name", 2))
     }
   }
@@ -53,7 +53,7 @@ class PreparedQuerySpec extends Specification {
       q.query must_== "select * from user where id=?     or id > ? or name like ?       or name = upper(?      )"
     }
     "three named parameters" in {
-      q.parameters must_== List(NamedPreparedQueryParameter(":u.id", 0), PositionalPreparedQueryParameter(1),
+      q.queryParameters must_== List(NamedPreparedQueryParameter(":u.id", 0), PositionalPreparedQueryParameter(1),
                                 NamedPreparedQueryParameter(":u.name", 2), NamedPreparedQueryParameter(":u.name", 3))
     }
   }
@@ -64,7 +64,7 @@ class PreparedQuerySpec extends Specification {
       q.query must_== "update user set name = 'foo=:foo \\' bar baz' where id=?   or name like ?"
     }
     "three named parameters" in {
-      q.parameters must_== List(NamedPreparedQueryParameter(":id", 0), PositionalPreparedQueryParameter(1))
+      q.queryParameters must_== List(NamedPreparedQueryParameter(":id", 0), PositionalPreparedQueryParameter(1))
     }
   }
 
@@ -74,7 +74,7 @@ class PreparedQuerySpec extends Specification {
       q.query must_== "update user set name = 'id=:id \\' bar baz' where id=?   or name like ?"
     }
     "three named parameters" in {
-      q.parameters must_== List(NamedPreparedQueryParameter(":id", 0), PositionalPreparedQueryParameter(1))
+      q.queryParameters must_== List(NamedPreparedQueryParameter(":id", 0), PositionalPreparedQueryParameter(1))
     }
   }
 

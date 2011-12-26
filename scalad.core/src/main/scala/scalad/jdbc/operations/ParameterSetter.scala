@@ -1,15 +1,17 @@
 package scalad.jdbc.operations
 
-import java.sql.Statement
 import scalad.PreparedQuery
+import java.sql.PreparedStatement
 
 /**
  * @author janmachacek
  */
 private[operations] trait ParameterSetter {
 
-  def parameterSetter[S <: Statement](query: PreparedQuery) = { ps: S =>
-    println("Setting parameters...")
+  def parameterSetter(query: PreparedQuery) = { ps: PreparedStatement =>
+    query.foreachParams { p =>
+      ps.setObject(p.index + 1, p.value)
+    }
   }
 
 }
