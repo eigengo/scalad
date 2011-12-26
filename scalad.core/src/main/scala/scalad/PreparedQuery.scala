@@ -45,7 +45,6 @@ object PreparedQuery {
     def next(token: Token): Token = {
       val text = new StringBuffer
       var openString: Boolean = false
-      var openEscape: Boolean = false
       val it = new StringIterator(queryText, token.position + 1)
 
       while (it.hasNext) {
@@ -55,7 +54,7 @@ object PreparedQuery {
             case Some('?')  => it.next(2)  // we have \, if next is ?, nowt
             case Some(':')  => it.next(2)  // we have \, if next is :, nowt
             case Some('\'') => it.next(2)  // we have \, if next is ', nowt
-            case _ => openEscape = !openEscape
+            case _ =>
           }
         } 
         if (it() == '\'') {
@@ -65,7 +64,7 @@ object PreparedQuery {
           }
         }
         
-        if (!openEscape && !openString) {
+        if (!openString) {
           if (text.length() > 0) {
             it() match {
               case '?' => return Mid(it.position, "?")
