@@ -1,10 +1,13 @@
 package scalad
 
 import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
+import org.junit.runner.RunWith
 
 /**
  * @author janmachacek
  */
+@RunWith(classOf[JUnitRunner])
 class PreparedQuerySpec extends Specification {
 
   import Scalad._
