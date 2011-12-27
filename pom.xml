@@ -62,7 +62,7 @@
 				<configuration>
 					<classesDirectory>target/classes</classesDirectory>
 					<includes>
-						<include>**/*Test.class</include>
+						<include>**/*Spec.class</include>
 					</includes>
 					<argLine>-Xmx1024M -XX:MaxPermSize=256m</argLine>
 				</configuration>
