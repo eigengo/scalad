@@ -14,8 +14,8 @@ trait Iteratees extends ParameterSetter {
   import scalaz.IterV._
   import scalaz.IterV
 
-  class ResultSetIterator[T](private val resultSet: ResultSet,
-                             private val mapper: (ResultSet) => T) extends Iterator[T] {
+  class ResultSetIterator[T : ClassManifest](private val resultSet: ResultSet,
+                             private val mapper: ResultSetMapper[T]) extends Iterator[T] {
 
     def hasNext = !resultSet.isLast
 
@@ -46,7 +46,7 @@ trait Iteratees extends ParameterSetter {
     }
   }
 
-  def select[R, T](query: PreparedQuery, i: IterV[T, R])(mapper: ResultSet => T) = exec {
+  def select[R, T : ClassManifest](query: PreparedQuery, i: IterV[T, R])(mapper: ResultSetMapper[T]) = exec {
     val executor = (ps: PreparedStatement) => {
       val rs: ResultSet = ps.executeQuery()
       val iterator = new ResultSetIterator[T](rs, mapper)

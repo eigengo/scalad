@@ -5,7 +5,6 @@ import com.mchange.v2.c3p0.ComboPooledDataSource
 import scalad.Scalad
 import scalad.jdbc.operations.{Iteratees, DDL}
 import java.sql.ResultSet
-import scalaz.Scalaz
 import scalad.jdbc.{AnnotationMapper, Immediate, Precompiled, JDBC}
 
 /**
@@ -51,8 +50,10 @@ object Main {
     println(id1.get)
 
     val mappedJdbc = new JDBC(dataSource) with Iteratees with Immediate with AnnotationMapper
-    val allMapped = jdbc.select("select * from USER", list[User])
 
+    val allMapped = mappedJdbc.select("select * from USER", list[User])(mappedJdbc.mapper)
+    println(allMapped)
+    
     /*
     jdbc.insert("USER (id, name, name) values (.id, .name, .name)" | u)
     jdbc.update("USER set name = .name where id = .id" | u)
