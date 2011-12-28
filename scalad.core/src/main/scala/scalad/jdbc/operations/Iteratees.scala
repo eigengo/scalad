@@ -14,7 +14,7 @@ trait Iteratees extends ParameterSetter {
   import scalaz.IterV._
   import scalaz.IterV
 
-  class ResultSetIterator[T : ClassManifest](private val resultSet: ResultSet,
+  class ResultSetIterator[T](private val resultSet: ResultSet,
                              private val mapper: ResultSetMapper[T]) extends Iterator[T] {
 
     def hasNext = !resultSet.isLast
@@ -46,7 +46,7 @@ trait Iteratees extends ParameterSetter {
     }
   }
 
-  def select[R, T : ClassManifest](query: PreparedQuery, i: IterV[T, R])(mapper: ResultSetMapper[T]) = exec {
+  def selectM[R, T](query: PreparedQuery, i: IterV[T, R])(mapper: ResultSetMapper[T]) = exec {
     val executor = (ps: PreparedStatement) => {
       val rs: ResultSet = ps.executeQuery()
       val iterator = new ResultSetIterator[T](rs, mapper)
@@ -56,4 +56,27 @@ trait Iteratees extends ParameterSetter {
     perform[PreparedStatement, R](_.prepareStatement(query.query), parameterSetter(query), executor)
   }
 
+  def select[R, T](query: PreparedQuery, i: IterV[T, R]) =
+    new Mapper[R, T]({mapper =>
+      val executor = (ps: PreparedStatement) => {
+        val rs: ResultSet = ps.executeQuery()
+        val iterator = new ResultSetIterator[T](rs, mapper)
+        i(iterator).run
+      }
+  
+      perform[PreparedStatement, R](_.prepareStatement(query.query), parameterSetter(query), executor)
+    })
+  
+  class Mapper[R, T](val f: (ResultSetMapper[T]) => R) {
+    
+    def apply(mapper: ResultSetMapper[T]): R = f(mapper)
+    
+    def automap(implicit evidence: ClassManifest[T]): R = {
+      f { rs =>
+        evidence.erasure.newInstance().asInstanceOf[T]
+      }
+    }
+    
+  }
+  
 }

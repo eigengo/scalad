@@ -1,19 +1,16 @@
 package scalad.jdbc.operations
 
 import java.sql.Statement
-import scalad.jdbc.{ExecutionPolicy, JDBCOperations}
-import scalad.{PreparedQuery, Query}
+import scalad.jdbc.JDBCOperations
+import scalad.PreparedQuery
 
 /**
  * @author janmachacek
  */
 trait DDL {
-  this: JDBCOperations with ExecutionPolicy =>
+  this: JDBCOperations =>
 
-  def execute(q: PreparedQuery) = exec {
-    perform[Statement, Unit](_.createStatement(), (_=>()), (_.execute(q.query)))
-  }
-  
-  def select(query: Query) = None
-  
+  def execute(q: PreparedQuery) =
+    perform[Statement, Boolean](_.createStatement(), (_=>()), (_.execute(q.query)))
+
 }

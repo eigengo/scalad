@@ -5,7 +5,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource
 import scalad.Scalad
 import scalad.jdbc.operations.{Iteratees, DDL}
 import java.sql.ResultSet
-import scalad.jdbc.{AnnotationMapper, Immediate, Precompiled, JDBC}
+import scalad.jdbc.{Immediate, Precompiled, JDBC}
 
 /**
  * @author janmachacek
@@ -48,12 +48,12 @@ object Main {
 
     //jdbc.select("* from USER" where ("id" ＝ 5L), head[User])(mapper)
 
-    val id1 = jdbc.select("select * from USER where id = ?" | 1L, head[User])(mapper)
+    val id1 = jdbc.selectM("select * from USER where id = ?" | 1L, head[User])(mapper)
     println(id1.get)
 
-    val mappedJdbc = new JDBC(dataSource) with Iteratees with Immediate with AnnotationMapper
+    val mappedJdbc = new JDBC(dataSource) with Iteratees with Immediate
 
-    val allMapped = mappedJdbc.select("select * from USER", list[User])(mappedJdbc.mapper)
+    val allMapped = mappedJdbc.select("select * from USER", list[User])(mapper)
     println(allMapped)
 
     /*
@@ -68,7 +68,7 @@ object Main {
 
     val precompiled = new JDBC(dataSource) with Precompiled with Iteratees
     val byId =
-      precompiled.select("SELECT * FROM USER where id=? and name=?" | (1L, "foo"), head[User])(mapper)
+      precompiled.selectM("SELECT * FROM USER where id=? and name=?" | (1L, "foo"), head[User])(mapper)
 
     byId("foo")
     byId("bar")
