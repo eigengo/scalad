@@ -46,7 +46,7 @@ object Main {
 //    val firstTwo = jdbc.select("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2))))(mapper)
 //    println(firstTwo)
 
-    jdbc.select("* from USER" where ("id" ＝ 5L), head[User])(mapper)
+    //jdbc.select("* from USER" where ("id" ＝ 5L), head[User])(mapper)
 
     val id1 = jdbc.select("select * from USER where id = ?" | 1L, head[User])(mapper)
     println(id1.get)
