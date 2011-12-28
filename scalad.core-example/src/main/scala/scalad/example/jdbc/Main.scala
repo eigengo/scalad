@@ -46,6 +46,8 @@ object Main {
 //    val firstTwo = jdbc.select("select * from USER", head[User] >>= (u => head map (u2 => (u <|*|> u2))))(mapper)
 //    println(firstTwo)
 
+    jdbc.select("* from USER" where ("id" ＝ 5L), head[User])(mapper)
+
     val id1 = jdbc.select("select * from USER where id = ?" | 1L, head[User])(mapper)
     println(id1.get)
 
@@ -53,7 +55,7 @@ object Main {
 
     val allMapped = mappedJdbc.select("select * from USER", list[User])(mappedJdbc.mapper)
     println(allMapped)
-    
+
     /*
     jdbc.insert("USER (id, name, name) values (.id, .name, .name)" | u)
     jdbc.update("USER set name = .name where id = .id" | u)

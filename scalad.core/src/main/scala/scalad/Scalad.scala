@@ -78,4 +78,6 @@ object Scalad {
   implicit def toExecutableQuery(sql: String) = PreparedQuery(toQuery(sql))
 
   implicit def toPreparedQuery(q: Query) = PreparedQuery(q)
+
+  implicit def toRestriction(property: String) = new PartialRestriction(NamedProperty(property))
 }

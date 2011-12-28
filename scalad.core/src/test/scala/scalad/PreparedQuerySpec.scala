@@ -57,7 +57,7 @@ class PreparedQuerySpec extends Specification {
     }
     "three named parameters" in {
       q.queryParameters must_== List(NamedPreparedQueryParameter(":u.id", 0), PositionalPreparedQueryParameter(1),
-                                NamedPreparedQueryParameter(":u.name", 2), NamedPreparedQueryParameter(":u.name", 3))
+                                     NamedPreparedQueryParameter(":u.name", 2), NamedPreparedQueryParameter(":u.name", 3))
     }
   }
 

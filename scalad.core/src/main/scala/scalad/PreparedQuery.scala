@@ -141,7 +141,7 @@ class PreparedQuery private(private[scalad] val query: String,
 
   private def parameterValue(name: String) = None
 
-  def foreachParams(f: (SettableParameter[_]) => Any) {
+  def foreachParam(f: (SettableParameter[_]) => Any) {
     queryParameters.foreach {p=>
       p match {
         case PositionalPreparedQueryParameter(index) =>
