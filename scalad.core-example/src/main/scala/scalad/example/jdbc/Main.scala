@@ -48,7 +48,7 @@ object Main {
 
     //jdbc.select("* from USER" where ("id" ＝ 5L), head[User])(mapper)
 
-    val id1 = jdbc.selectM("select * from USER where id = ?" | 1L, head[User])(mapper)
+    val id1 = jdbc.select("select * from USER where id = ?" | 1L, head[User])(mapper)
     println(id1.get)
 
     val mappedJdbc = new JDBC(dataSource) with Iteratees with Immediate
@@ -68,7 +68,7 @@ object Main {
 
     val precompiled = new JDBC(dataSource) with Precompiled with Iteratees
     val byId =
-      precompiled.selectM("SELECT * FROM USER where id=? and name=?" | (1L, "foo"), head[User])(mapper)
+      precompiled.select("SELECT * FROM USER where id=? and name=?" | (1L, "foo"), head[User])(mapper)
 
     byId("foo")
     byId("bar")

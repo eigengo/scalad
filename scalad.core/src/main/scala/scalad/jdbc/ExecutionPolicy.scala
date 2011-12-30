@@ -6,6 +6,6 @@ package scalad.jdbc
 trait ExecutionPolicy {
   type Result[R]
 
-  def exec[A](a: A): Result[A]
+  private[jdbc] def exec[A](f: => A): Result[A]
 
 }

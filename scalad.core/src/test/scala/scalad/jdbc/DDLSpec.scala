@@ -1,14 +1,13 @@
 package scalad.jdbc
 
 import operations.{DDL, Iteratees}
-import org.specs2.mutable.Specification
 import javax.sql.DataSource
 import scalad.Scalad
 
 /**
  * @author janmachacek
  */
-class DDLSpec extends Specification with JDBCSpecSupport {
+class DDLSpec extends JDBCSpecification {
   import Scalad._
 
   override type JDBCType = JDBC with DDL with Iteratees with Immediate

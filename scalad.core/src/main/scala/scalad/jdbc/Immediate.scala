@@ -6,5 +6,5 @@ package scalad.jdbc
 trait Immediate extends ExecutionPolicy {
   type Result[R] = R
 
-  def exec[A](a: A) = a
+  private[jdbc] def exec[A](f: => A) = f
 }

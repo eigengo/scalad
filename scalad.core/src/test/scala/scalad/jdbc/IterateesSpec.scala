@@ -1,14 +1,14 @@
 package scalad.jdbc
 
 import operations.{DDL, Iteratees}
-import org.specs2.mutable.Specification
 import javax.sql.DataSource
 import scalad.{Sample, Scalad}
+import java.sql.ResultSet
 
 /**
  * @author janmachacek
  */
-class IterateesSpec extends Specification with JDBCSpecSupport {
+class IterateesSpec extends JDBCSpecification {
   import Scalad._
 
   type JDBCType = JDBC with Iteratees with DDL with Immediate
@@ -17,8 +17,10 @@ class IterateesSpec extends Specification with JDBCSpecSupport {
 
   "select all objects" in {
     setup()
+    val mapper = (rs: ResultSet) => new Sample(rs.getLong("id"), rs.getString("name"))
     "must select all users with list" in {
-      instance.select("select * from SAMPLE", list[Sample]).automap.size must be_== (3)
+      instance.select("select * from SAMPLE order by ID", list[Sample])(mapper) must_==
+        List(new Sample(1L, "foo"), new Sample(2L, "bar"), new Sample(3L, "baz"))
     }
   }
 
