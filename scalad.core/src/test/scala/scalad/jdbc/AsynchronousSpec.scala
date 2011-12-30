@@ -30,6 +30,9 @@ class AsynchronousSpec extends JDBCSpecification {
     "calling ! on s1 and s2 should give the results" in {
       s1().size must_== (10000)
       s2().size must_== (10000)
+
+      s1().size must_== (10000)
+      s2().size must_== (10000)
     }
   }
 
