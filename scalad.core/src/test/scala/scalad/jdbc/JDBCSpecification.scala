@@ -3,8 +3,6 @@ package scalad.jdbc
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import javax.sql.DataSource
 import org.specs2.mutable.Specification
-import org.specs2.specification.Example
-import org.specs2.execute.Result
 
 /**
  * @author janmachacek
