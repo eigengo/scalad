@@ -2,8 +2,9 @@ package org.cakesolutions.scalad.mongo
 
 import com.mongodb._
 import spray.json._
-import scala.{deprecated, Some}
+import scala.Some
 import collection.mutable.ArrayBuffer
+import scalaz.effect.IO
 
 /**
  * Search returned too many results (would have been a memory hazard to proceed).
@@ -89,26 +90,26 @@ trait MongoCreateAndSearch {
    * (`CollectionProvider` is a good place to do this).
    * @return the parameter, or `None` if not added.
    */
-  def create[T: CollectionProvider : MongoSerializer](entity: T): Option[T] = {
+  def create[T: CollectionProvider : MongoSerializer](entity: T): IO[Option[T]] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
 
     val result = collection.insert(serialiser serialize entity).getLastError
-    if (result.ok()) Some(entity)
-    else None
+    if (result.ok()) IO(Some(entity))
+    else IO(None)
   }
 
   /**
    * @return the first result from the result of the query, or `None` if nothing found.
    */
-  def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
+  def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): IO[Option[T]] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
 
     val cursor = collection.find(query)
     try
-      if (cursor.hasNext) Some(serialiser deserialize cursor.next())
-      else None
+      if (cursor.hasNext) IO(Some(serialiser deserialize cursor.next()))
+      else IO(None)
     finally
       cursor.close()
   }
@@ -117,7 +118,7 @@ trait MongoCreateAndSearch {
    * @return all results from the query.
    * @throws TooManyResults if there were too many results.
    */
-  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): IndexedSeq[T] = {
+  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): IO[IndexedSeq[T]] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
 
@@ -129,7 +130,7 @@ trait MongoCreateAndSearch {
         if (hits.length > MaxResults)
           throw new TooManyResults(query, hits.length)
       }
-      hits.toIndexedSeq
+      IO(hits.toIndexedSeq)
     } finally
       cursor.close()
   }
@@ -141,11 +142,16 @@ trait MongoCreateAndSearch {
    * @return the only found entry, or `None` if nothing found.
    * @throws TooManyResults if more than one result.
    */
-  def searchUnique[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
-    val results = searchAll(query)
-    if (results.isEmpty) None
-    else if (results.tail.isEmpty) Some(results.head)
-    else throw new TooManyResults(query, results.length)
+  def searchUnique[T: CollectionProvider : MongoSerializer](query: DBObject): IO[Option[T]]= {
+    import scalaz.syntax.monad._
+
+    def unique(results: Seq[T]): Option[T] = {
+      if (results.isEmpty) None
+      else if (results.tail.isEmpty) Some(results.head)
+      else throw new TooManyResults(query, results.length)
+    }
+
+    searchAll(query) >>= {r => IO(unique(r)) }
   }
 }
 
@@ -158,24 +164,24 @@ trait MongoUpdateAndDelete {
    * Updates the first entry that matches the identity query.
    * @return the parameter or `None` if the entity was not found in the database.
    */
-  def updateFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
+  def updateFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
 
-    if (collection.findAndModify(id, serialiser serialize entity) != null) Some(entity)
-    else None
+    if (collection.findAndModify(id, serialiser serialize entity) != null) IO(Some(entity))
+    else IO(None)
   }
 
   /**
    * @return `None` if the delete failed, otherwise the parameter.
    */
-  def deleteFirst[T: CollectionProvider : IdentityQueryBuilder](entity: T): Option[T] = {
+  def deleteFirst[T: CollectionProvider : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
 
-    if (collection.findAndRemove(id) != null) Some(entity)
-    else None
+    if (collection.findAndRemove(id) != null) IO(Some(entity))
+    else IO(None)
   }
 }
 
@@ -189,7 +195,7 @@ trait MongoFind {
    * @return the found entity or `None` if the entity was not found in the database.
    * @throws TooManyResults if more than one result.
    */
-  def findUnique[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
+  def findUnique[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
     searchUnique(id)
   }
@@ -197,7 +203,7 @@ trait MongoFind {
   /**
    * @return the found entity or `None` if the entity was not found in the database.
    */
-  def findFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
+  def findFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
     searchFirst(id)
   }
@@ -215,7 +221,7 @@ trait MongoRead {
    */
   def readUnique[K, T](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
                          collectionProvider: CollectionProvider[T],
-                         serialiser: MongoSerializer[T]): Option[T] = {
+                         serialiser: MongoSerializer[T]): IO[Option[T]] = {
     val query = keyBuilder.createKeyQuery(key)
     searchUnique(query)
   }
@@ -225,7 +231,7 @@ trait MongoRead {
    */
   def readFirst[K, T](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
                               collectionProvider: CollectionProvider[T],
-                              serialiser: MongoSerializer[T]): Option[T] = {
+                              serialiser: MongoSerializer[T]): IO[Option[T]] = {
     val query = keyBuilder.createKeyQuery(key)
     searchFirst(query)
   }
@@ -312,7 +318,7 @@ trait IdField[T <: {def id : K}, K] {
 }
 
 /**
- * Specialisation of [[com.quipmedia.landlord.core.application.SingleFieldId]]
+ * Specialisation of [[org.cakesolutions.scalad.mongo.SingleFieldId]]
  * for `id`s that are stored as `String` but not interpreted as `String` by `DBObject`.
  *
  * This is basically a workaround for `UUID` as many serialisers will save as `String`,
@@ -325,7 +331,7 @@ class SingleFieldAsStringId[T <: {def id : K}, K](field: String) extends SingleF
 
 /**
  * Mixin to get support for SQL style `id` columns that need the
- * [[com.quipmedia.landlord.core.application.SingleFieldAsStringId]]
+ * [[org.cakesolutions.scalad.mongo.SingleFieldAsStringId]]
  * workaround.
  */
 trait StringIdField[T <: {def id : K}, K] {

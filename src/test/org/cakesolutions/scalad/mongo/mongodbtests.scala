@@ -1,11 +1,10 @@
-package com.quipmedia.landlord.core.application
+package org.cakesolutions.scalad.mongo
 
 import org.specs2.mutable.Specification
 import com.mongodb._
 import scala.util.Random
 import java.util.UUID
-import com.quipmedia.landlord.api.UuidMarshalling
-import spray.json.DefaultJsonProtocol
+import spray.json.{JsValue, JsString, JsonFormat, DefaultJsonProtocol}
 
 trait MongoCrudTestAccess {
   val m = new Mongo()
@@ -13,6 +12,16 @@ trait MongoCrudTestAccess {
   // write concern needed to catch constraint violations (Mongo Magic)
   val db = m.getDB("MongoCrudTest")
   db.dropDatabase()
+}
+
+trait UuidMarshalling {
+  implicit object UuidJsonFormat extends JsonFormat[UUID] {
+    def write(x: UUID) = JsString(x toString ())
+    def read(value: JsValue) = value match {
+      case JsString(x) => UUID.fromString(x)
+      case x => sys.error("Expected UUID as JsString, but got " + x)
+    }
+  }
 }
 
 case class LongEntity(id: Long, word: String)
@@ -42,7 +51,7 @@ trait UuidEntityMarshalling extends DefaultJsonProtocol with UuidMarshalling {
 }
 
 trait UuidEntityPersistence extends MongoCrudTestAccess with StringIdField[UuidEntity, UUID]
-with UuidEntityMarshalling with SprayJsonStringSerializers {
+  with UuidEntityMarshalling with SprayJsonStringSerializers {
 
   implicit val UuidEntityCollectionProvider = new CollectionProvider[UuidEntity] with UniqueIndex[UuidEntity] {
     override def getCollection = db.getCollection("uuid")
@@ -69,7 +78,7 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     val update = new LongEntity(long, "update")
 
     "return self from create()" in {
-      crud.create(entity).get mustEqual (entity)
+      crud.create(entity).unsafePerformIO().get mustEqual (entity)
     }
 
     "throw MongoException when create() violates constraint" in {
@@ -77,15 +86,15 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     }
 
     "be searchable by field" in {
-      crud.readUnique(long).get mustEqual (entity)
+      crud.readUnique(long).unsafePerformIO().get mustEqual (entity)
     }
 
     "be searchable by example" in {
-      crud.findUnique(entity).get mustEqual (entity)
+      crud.findUnique(entity).unsafePerformIO().get mustEqual (entity)
     }
 
     "be updatable by example" in {
-      crud.updateFirst(update).get mustEqual (update)
+      crud.updateFirst(update).unsafePerformIO().get mustEqual (update)
     }
   }
 
@@ -98,7 +107,7 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     val update = new UuidEntity(uuid, new SimpleEntity("update", "bar"))
 
     "return self from create()" in {
-      crud.create(entity).get mustEqual (entity)
+      crud.create(entity).unsafePerformIO().get mustEqual (entity)
     }
 
     "throw MongoException when create() violates constraint" in {
@@ -106,15 +115,15 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     }
 
     "be searchable by field" in {
-      crud.readUnique(uuid).get mustEqual (entity)
+      crud.readUnique(uuid).unsafePerformIO().get mustEqual (entity)
     }
 
     "be searchable by example" in {
-      crud.findUnique(entity).get mustEqual (entity)
+      crud.findUnique(entity).unsafePerformIO().get mustEqual (entity)
     }
 
     "be updatable by example" in {
-      crud.updateFirst(update).get mustEqual (update)
+      crud.updateFirst(update).unsafePerformIO().get mustEqual (update)
     }
   }
 }
