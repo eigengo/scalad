@@ -4,12 +4,23 @@ import com.mongodb._
 import spray.json._
 import scala.Some
 import collection.mutable.ArrayBuffer
-import scalaz.effect.IO
+import concurrent.{ExecutionContext, Lock, Future}
+import collection.mutable
+import java.util.concurrent.atomic.AtomicBoolean
+import annotation.tailrec
+
+/**
+ * These implicits make the MongoDB API nicer to use, for example by allowing
+ * JSON search queries to be passed instead of `DBObject`s.
+ */
+object MongoImplicits {
+  implicit var JSON2DBObject = (json: String) => util.JSON.parse(json).asInstanceOf[DBObject]
+}
 
 /**
  * Search returned too many results (would have been a memory hazard to proceed).
  */
-case class TooManyResults(query: DBObject, results: Int) extends Exception
+case class TooManyResults(query: DBObject) extends Exception
 
 /**
  * Mechanism for finding an entry in the database
@@ -46,16 +57,17 @@ trait CollectionProvider[T] {
 }
 
 /**
- * Easy way to add a unique index onto a Mongo collection.
+ * Easy way to add unique indexes to a Mongo collection.
  */
-trait UniqueIndex[T] {
-  this: CollectionProvider[T] =>
+trait IndexedCollectionProvider[T] extends CollectionProvider[T] {
 
-  indexFields.foreach {
-    field => getCollection.ensureIndex(new BasicDBObject(field, 1), null, true)
+  doIndex()
+
+  def doIndex() {
+    indexFields.foreach(field => getCollection.ensureIndex(new BasicDBObject(field, 1), null, true))
   }
 
-  def indexFields: List[String]
+  protected def indexFields: List[String]
 }
 
 /**
@@ -76,126 +88,253 @@ trait UniqueIndex[T] {
  * @author Jan Machacek
  * @see <a href="http://www.cakesolutions.net/teamblogs/2012/11/05/crud-options/">Thinking notes on the API design</a>
  */
-class MongoCrud extends MongoCreateAndSearch with MongoUpdateAndDelete with MongoRead with MongoFind
+class MongoCrud extends MongoCreate
+with MongoSearch
+with MongoUpdate
+with MongoDelete
+with MongoRead
+with MongoFind
 
 /*
- * Operations that only require `CollectionProvider` and `MongoSerializer`.
+ * Create entities in the database, requires `CollectionProvider` and `MongoSerializer`.
  */
-trait MongoCreateAndSearch {
-
-  def MaxResults = 10000
+trait MongoCreate {
 
   /**
    * Use unique indices in MongoDB to ensure that duplicate entries are not created
    * (`CollectionProvider` is a good place to do this).
    * @return the parameter, or `None` if not added.
    */
-  def create[T: CollectionProvider : MongoSerializer](entity: T): IO[Option[T]] = {
+  def create[T: CollectionProvider : MongoSerializer](entity: T): Option[T] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
 
     val result = collection.insert(serialiser serialize entity).getLastError
-    if (result.ok()) IO(Some(entity))
-    else IO(None)
+    if (result.ok()) Some(entity)
+    else None
   }
+}
+
+/**
+ * An `Iterable` that provides a very clean interface to the
+ * Producer / Consumer pattern.
+ *
+ * Both the `hasNext` and `next` methods of the `Iterator`
+ * may block if the consumer catches up with the producer.
+ *
+ * If the client wishes to cancel iteration early, the
+ * `stop` method may be called to free up resources. Some
+ * implementations may introduce a timeout feature which
+ * will automatically free or log unclosed resources on
+ * idle activity.
+ *
+ * Functional purists may use this in their `Iteratees`
+ * patterns.
+ *
+ *
+ * It is a common misconception that `Iterator.hasNext` is
+ * not allowed to block.
+ * However, the API documentation does not preclude
+ * blocking behaviour. Note that `Queue` implementations
+ * return `false` once the consumer reaches the tail – a
+ * fundamental difference opposite this trait.
+ */
+trait ConsumerIterable[T] extends Iterable[T] {
+
+  /**
+   * Instruct the backing implementation to truncate at its
+   * earliest convenience and dispose of resources.
+   */
+  def stop()
+
+  /**
+   * Callback which limits the number of entities in each call
+   * to no more than the given parameter.
+   *
+   * (Note that paging does imply anything on the buffering strategy,
+   * which decides how many entries to store in memory from a search
+   * on the database.)
+   */
+  def page(entries: Int)(f: List[T] => Unit): Unit = ???
+}
+
+/**
+ * Implementation that uses a `Queue` to buffer the results
+ * of an operation, blocking on `hasNext`. `next` will
+ * not block if `hasNext` is `true`.
+ */
+class ProducerConsumerIterable[T] extends ConsumerIterable[T] {
+
+  // ?? is there a more "Scala" way to use wait/notify
+  private val blocker = new AnyRef
+  // used in hasNext, notify on changes
+  private val lock = new Lock // used to avoid a race condition on close
+
+  private val queue = new mutable.SynchronizedQueue[T]
+  private val stopSignal = new AtomicBoolean
+  private val closed = new AtomicBoolean
+
+  def push(el: T) {
+    queue.enqueue(el)
+    blocker.synchronized(blocker.notify())
+  }
+
+  def stopped() = stopSignal.get
+
+  def close() {
+    lock.acquire()
+    closed.set(true)
+    lock.release()
+    blocker.synchronized(blocker.notify())
+  }
+
+  override def iterator = new Iterator[T] {
+    @tailrec
+    override def hasNext =
+      if (!queue.isEmpty) true
+      else if (closed.get) !queue.isEmpty // non-locking optimisation
+      else {
+        lock.acquire()
+        if (closed.get) {
+          // avoids race condition with 'close'
+          lock.release()
+          !queue.isEmpty
+        } else {
+          lock.release()
+          blocker.synchronized(blocker.wait()) // will block until more is known
+          hasNext
+        }
+      }
+
+    override def next() = queue.dequeue()
+  }
+
+  override def stop() {
+    stopSignal set true
+    blocker.synchronized(blocker.notify())
+  }
+}
+
+trait ResultSelector[T] {
+
+  /**
+   * Called periodically by the selective search.
+   *
+   * @return the trimmed results according to the implementation specific criteria.
+   */
+  def trim(results: List[T]): Iterable[T]
+}
+
+
+/*
+ * Search using MongoDB `DBObject`s.
+ *
+ * Implicit conversions from JSON syntax or DSLs bring these methods within reach of
+ * most users.
+ */
+trait MongoSearch {
 
   /**
    * @return the first result from the result of the query, or `None` if nothing found.
    */
-  def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): IO[Option[T]] = {
+  def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
 
     val cursor = collection.find(query)
     try
-      if (cursor.hasNext) IO(Some(serialiser deserialize cursor.next()))
-      else IO(None)
+      if (cursor.hasNext) Some(serialiser deserialize cursor.next())
+      else None
     finally
       cursor.close()
   }
 
   /**
    * @return all results from the query.
-   * @throws TooManyResults if there were too many results.
    */
-  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): IO[IndexedSeq[T]] = {
-    val collection = implicitly[CollectionProvider[T]].getCollection
-    val serialiser = implicitly[MongoSerializer[T]]
+  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): ConsumerIterable[T] = {
+    val iterable = new ProducerConsumerIterable[T]
 
-    val cursor = collection.find(query)
-    try {
-      val hits = new ArrayBuffer[T]
-      while (cursor.hasNext) {
-        hits += serialiser deserialize cursor.next()
-        if (hits.length > MaxResults)
-          throw new TooManyResults(query, hits.length)
+    import ExecutionContext.Implicits._
+    Future {
+      val collection = implicitly[CollectionProvider[T]].getCollection
+      val serialiser = implicitly[MongoSerializer[T]]
+      val cursor = collection find query
+
+      try {
+        while (!iterable.stopped && cursor.hasNext) {
+          val found = serialiser deserialize cursor.next()
+          iterable.push(found)
+        }
+      } finally {
+        iterable.close()
+        cursor.close()
       }
-      IO(hits.toIndexedSeq)
-    } finally
-      cursor.close()
-  }
+    }
 
-  // TODO: searchTop which returns maximum of MaxResults and requires rejection policy
-  // (would be very useful for version fields)
+    iterable
+  }
 
   /**
    * @return the only found entry, or `None` if nothing found.
    * @throws TooManyResults if more than one result.
    */
-  def searchUnique[T: CollectionProvider : MongoSerializer](query: DBObject): IO[Option[T]]= {
-    import scalaz.syntax.monad._
-
-    def unique(results: Seq[T]): Option[T] = {
-      if (results.isEmpty) None
-      else if (results.tail.isEmpty) Some(results.head)
-      else throw new TooManyResults(query, results.length)
-    }
-
-    searchAll(query) >>= {r => IO(unique(r)) }
+  def searchUnique[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
+    val results = searchAll(query).toList // blocks
+    if (results.isEmpty) None
+    else if (results.tail.isEmpty) Some(results.head)
+    else throw new TooManyResults(query)
   }
 }
 
 /**
- * Operations requiring an `IdentityQueryBuilder`.
+ * `UPDATE` Operations.
  */
-trait MongoUpdateAndDelete {
+trait MongoUpdate {
 
   /**
    * Updates the first entry that matches the identity query.
    * @return the parameter or `None` if the entity was not found in the database.
    */
-  def updateFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
+  def updateFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
 
-    if (collection.findAndModify(id, serialiser serialize entity) != null) IO(Some(entity))
-    else IO(None)
+    if (collection.findAndModify(id, serialiser serialize entity) != null) Some(entity)
+    else None
   }
+}
+
+/**
+ * `DELETE` Operations.
+ */
+trait MongoDelete {
 
   /**
    * @return `None` if the delete failed, otherwise the parameter.
    */
-  def deleteFirst[T: CollectionProvider : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
+  def deleteFirst[T: CollectionProvider : IdentityQueryBuilder](entity: T): Option[T] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
 
-    if (collection.findAndRemove(id) != null) IO(Some(entity))
-    else IO(None)
+    if (collection.findAndRemove(id) != null) Some(entity)
+    else None
   }
+
 }
 
 /**
  * Operations requiring `IdentityQueryBuilder` and create/search.
  */
 trait MongoFind {
-  this: MongoCreateAndSearch =>
+  this: MongoSearch =>
 
   /**
    * @return the found entity or `None` if the entity was not found in the database.
    * @throws TooManyResults if more than one result.
    */
-  def findUnique[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
+  def findUnique[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
     searchUnique(id)
   }
@@ -203,7 +342,7 @@ trait MongoFind {
   /**
    * @return the found entity or `None` if the entity was not found in the database.
    */
-  def findFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): IO[Option[T]] = {
+  def findFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
     searchFirst(id)
   }
@@ -213,15 +352,15 @@ trait MongoFind {
  * Operations requiring `KeyQueryBuilder` and create/search.
  */
 trait MongoRead {
-  this: MongoCreateAndSearch =>
+  this: MongoSearch =>
 
   /**
    * @return the only entity matching the key-based search, or `None`.
    * @throws TooManyResults if more than one result.
    */
-  def readUnique[K, T](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
-                         collectionProvider: CollectionProvider[T],
-                         serialiser: MongoSerializer[T]): IO[Option[T]] = {
+  def readUnique[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
+                               collectionProvider: CollectionProvider[T],
+                               serialiser: MongoSerializer[T]): Option[T] = {
     val query = keyBuilder.createKeyQuery(key)
     searchUnique(query)
   }
@@ -229,11 +368,50 @@ trait MongoRead {
   /**
    * @return the first entity matching the key-based search, or `None`.
    */
-  def readFirst[K, T](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
+  def readFirst[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
                               collectionProvider: CollectionProvider[T],
-                              serialiser: MongoSerializer[T]): IO[Option[T]] = {
+                              serialiser: MongoSerializer[T]): Option[T] = {
     val query = keyBuilder.createKeyQuery(key)
     searchFirst(query)
+  }
+}
+
+
+/**
+ * Allows client code to select results by trimming incremental
+ * result sets.
+ *
+ * This avoids running into memory problems when a search may return
+ * many results, but a selection criteria (e.g. "10 most recent") is
+ * to be used.
+ */
+trait MongoSelectiveSearch {
+
+  /**
+   * @param selector called periodically to trim the results
+   * @return all results from the query and passing the selection criteria.
+   *         The return type is different to
+   *         [[org.cakesolutions.scalad.mongo.MongoSearch.searchAll( )]]
+   *         and this method blocks.
+   */
+  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject, selector: List[T] => List[T]): List[T] = {
+    val collection = implicitly[CollectionProvider[T]].getCollection
+    val serialiser = implicitly[MongoSerializer[T]]
+
+    val cursor = collection.find(query)
+    try {
+      val hits = new ArrayBuffer[T]
+      while (cursor.hasNext) {
+        hits += serialiser deserialize cursor.next()
+        if (hits.length % 100 == 0) {
+          val trimmed = selector(hits.toList)
+          hits.clear()
+          hits ++= trimmed
+        }
+      }
+      selector(hits.toList)
+    } finally
+      cursor.close()
   }
 }
 
@@ -253,9 +431,6 @@ class SprayJsonStringSerialisation[T: JsonFormat] extends MongoSerializer[T] {
   }
 
   override def deserialize(found: DBObject): T = {
-    if (found.containsField("_id")) // internal MongoDB field
-      found.removeField("_id")
-
     val json = util.JSON.serialize(found)
     val parsed = JsonParser.apply(json)
     val formatter = implicitly[JsonFormat[T]]
@@ -271,7 +446,7 @@ trait SprayJsonStringSerializers {
   /**
    * Construct MongoSerializer for A, if there is an instance of JsonWriter for A
    */
-  implicit def sprayJsonStringSerializer[T : JsonFormat]: MongoSerializer[T] = new SprayJsonStringSerialisation[T]
+  implicit def sprayJsonStringSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonStringSerialisation[T]
 }
 
 /**
@@ -297,43 +472,96 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
 
 /**
- * Provides a concept of identity that resembles a SQL `id` column
- * and
- * provides a `read` query that resembles SQL's ``SELECT a WHERE a.id = ...``.
+ * Provides a `read` query that resembles SQL's ``SELECT a WHERE a.field = ...``.
+ *
+ * The key must not require any special serialisation.
  */
-class SingleFieldId[T <: {def id : K}, K](val field: String) extends IdentityQueryBuilder[T] with KeyQueryBuilder[T, K] {
+trait FieldQueryBuilder[T, K] extends KeyQueryBuilder[T, K] {
+  def createKeyQuery(key: K): DBObject = new BasicDBObject(field, key)
 
-  def createIdQuery(entity: T) = createFieldIdQuery(entity.id)
-
-  def createKeyQuery(key: K) = createFieldIdQuery(key)
-
-  protected def createFieldIdQuery(id: K): DBObject = new BasicDBObject(field, id)
+  def field: String
 }
 
 /**
- * Mixin to get support for SQL style `id` columns
+ * Provides a concept of identity that resembles a SQL `field` column
+ *
+ * The key must not require any special serialisation.
+ */
+trait FieldIdentityQueryBuilder[T, K] extends IdentityQueryBuilder[T] {
+  def createIdQuery(entity: T): DBObject = new BasicDBObject(field, id(entity))
+
+  def field: String
+
+  def id(entity: T): K
+}
+
+/**
+ * Syntactic sugar for [[org.cakesolutions.scalad.mongo.FieldQueryBuilder]]
+ */
+class FieldQuery[T, K](val field: String) extends FieldQueryBuilder[T, K]
+
+/**
+ * Conveniently mixes together two traits that are often seen together.
+ */
+trait IdentityField[T, K] extends FieldQueryBuilder[T, K] with FieldIdentityQueryBuilder[T, K]
+
+/**
+ * Solidifies [[org.cakesolutions.scalad.mongo.IdentityField]]
+ * for fields named `id`.
  */
 trait IdField[T <: {def id : K}, K] {
-  implicit val IdField = new SingleFieldId[T, K]("id")
+  def id(entity: T) = entity.id
+
+  def field = "id"
 }
 
 /**
- * Specialisation of [[org.cakesolutions.scalad.mongo.SingleFieldId]]
- * for `id`s that are stored as `String` but not interpreted as `String` by `DBObject`.
- *
- * This is basically a workaround for `UUID` as many serialisers will save as `String`,
- * but direct `DBObject` construction creates a special BSON object.
+ * Convenient mixin to provide
+ * [[org.cakesolutions.scalad.mongo.IdField]]
+ * support for simple field types.
  */
-class SingleFieldAsStringId[T <: {def id : K}, K](field: String) extends SingleFieldId[T, K](field) {
+trait ImplicitIdField[T <: {def id : K}, K] {
+  implicit val IdField = new IdentityField[T, K] with IdField[T, K]
+}
 
-  override protected def createFieldIdQuery(id: K) = new BasicDBObject(field, id.toString)
+
+/**
+ * Specialisation of [[org.cakesolutions.scalad.mongo.FieldQueryBuilder]]
+ * for fields that are serialized to `String` but interpreted as a special case
+ * by `BasicDBObject`, i.e. UUID.
+ */
+trait FieldAsString[T, K] extends FieldQueryBuilder[T, K] {
+  override def createKeyQuery(key: K): DBObject = new BasicDBObject(field, key.toString)
 }
 
 /**
- * Mixin to get support for SQL style `id` columns that need the
- * [[org.cakesolutions.scalad.mongo.SingleFieldAsStringId]]
- * workaround.
+ * Friend of [[org.cakesolutions.scalad.mongo.FieldAsString]].
  */
-trait StringIdField[T <: {def id : K}, K] {
-  implicit val StringIdField = new SingleFieldAsStringId[T, K]("id")
+trait IdentityAsString[T, K] extends FieldIdentityQueryBuilder[T, K] {
+  override def createIdQuery(entity: T): DBObject = new BasicDBObject(field, id(entity).toString)
+}
+
+/**
+ * Conveniently mixes together two traits that are often seen together.
+ */
+trait IdentityFieldAsString[T, K] extends FieldAsString[T, K] with IdentityAsString[T, K]
+
+
+/**
+ * Provides a `read` query using serialised fields.
+ */
+class SerializedFieldQueryBuilder[T, K](val field: String)
+                                       (implicit serialiser: MongoSerializer[K])
+  extends FieldQueryBuilder[T, K] {
+  override def createKeyQuery(key: K): DBObject = new BasicDBObject(field, serialiser.serialize(key))
+}
+
+/**
+ * Provides a concept of identity that resembles a SQL `field` column,
+ * with serialization on the field.
+ */
+abstract class SerializedIdentityQueryBuilder[T, K](val field: String)
+                                                   (implicit serialiser: MongoSerializer[K])
+  extends FieldIdentityQueryBuilder[T, K] {
+  override def createIdQuery(entity: T) = new BasicDBObject(field, serialiser.serialize(id(entity)))
 }

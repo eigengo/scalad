@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import com.mongodb._
 import scala.util.Random
 import java.util.UUID
-import spray.json.{JsValue, JsString, JsonFormat, DefaultJsonProtocol}
+import spray.json._
 
 trait MongoCrudTestAccess {
   val m = new Mongo()
@@ -14,21 +14,26 @@ trait MongoCrudTestAccess {
   db.dropDatabase()
 }
 
+// might move upstream: https://github.com/spray/spray-json/issues/25
 trait UuidMarshalling {
+
   implicit object UuidJsonFormat extends JsonFormat[UUID] {
-    def write(x: UUID) = JsString(x toString ())
+    def write(x: UUID) = JsString(x toString())
+
     def read(value: JsValue) = value match {
       case JsString(x) => UUID.fromString(x)
-      case x => sys.error("Expected UUID as JsString, but got " + x)
+      case x => deserializationError("Expected UUID as JsString, but got " + x)
     }
   }
+
 }
+
 
 case class LongEntity(id: Long, word: String)
 
-trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol with IdField[LongEntity, Long] {
+trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol with ImplicitIdField[LongEntity, Long] {
 
-  implicit val LongEntityCollectionProvider = new CollectionProvider[LongEntity] with UniqueIndex[LongEntity] {
+  implicit val LongEntityCollectionProvider = new IndexedCollectionProvider[LongEntity] {
     override def getCollection = db.getCollection("long")
 
     override def indexFields = List("id")
@@ -39,6 +44,14 @@ trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol
 
   // see UuidEntityPersistence for an alternative way to get serialisation
   implicit val LongEntitySerialiser = new SprayJsonStringSerialisation[LongEntity]
+
+  // create a non-identity search
+  // NOTE: implicitly chosen by type, so multiple fields of the same type
+  // will mean the client has to explicitly list the search builders.
+  // it is therefore best practice to create custom case classes for
+  // all fields – it will also give additional type safety elsewhere.
+  implicit val ReadByWord = new FieldQuery[LongEntity, String]("word")
+
 }
 
 case class SimpleEntity(word: String, another: String)
@@ -50,16 +63,33 @@ trait UuidEntityMarshalling extends DefaultJsonProtocol with UuidMarshalling {
   implicit val UuidEntityFormatter = jsonFormat2(UuidEntity)
 }
 
-trait UuidEntityPersistence extends MongoCrudTestAccess with StringIdField[UuidEntity, UUID]
-  with UuidEntityMarshalling with SprayJsonStringSerializers {
+trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalling with SprayJsonStringSerializers {
 
-  implicit val UuidEntityCollectionProvider = new CollectionProvider[UuidEntity] with UniqueIndex[UuidEntity] {
+  implicit val UuidEntityCollectionProvider = new IndexedCollectionProvider[UuidEntity] {
     override def getCollection = db.getCollection("uuid")
 
     override def indexFields = List("id")
   }
+
+  implicit val UuidIdAsString = new IdentityFieldAsString[UuidEntity, UUID] with IdField[UuidEntity, UUID]
+
+  implicit val ReadBySimple = new SerializedFieldQueryBuilder[UuidEntity, SimpleEntity]("simple")
 }
 
+object UuidEntityPersistence {
+  def newRandom() = {
+    new UuidEntity(UUID.randomUUID(), new SimpleEntity(randomString(), randomString()))
+  }
+
+  def randomString() = {
+    val nameBuffer = new StringBuilder
+    for (i <- 1 to 16) {
+      nameBuffer.append(Random.nextPrintableChar())
+    }
+    //    new Simple(Random.nextLong(), Random.nextString(16)) // results in JSON parse exceptions
+    nameBuffer.toString()
+  }
+}
 
 /**
  * MongoDB *must* be running locally.
@@ -73,12 +103,13 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     sequential
 
     val crud = new MongoCrud
-    val long = Random.nextLong()
-    val entity = new LongEntity(long, "original")
-    val update = new LongEntity(long, "update")
+    val long = 13L
+    val jsonQuery = "{'id': 13}"
+    val entity = LongEntity(long, "original")
+    val update = LongEntity(long, "update")
 
     "return self from create()" in {
-      crud.create(entity).unsafePerformIO().get mustEqual (entity)
+      crud.create(entity).get mustEqual (entity)
     }
 
     "throw MongoException when create() violates constraint" in {
@@ -86,15 +117,39 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     }
 
     "be searchable by field" in {
-      crud.readUnique(long).unsafePerformIO().get mustEqual (entity)
+      crud.readFirst("original").get mustEqual (entity)
+    }
+
+    "be searchable by identity field" in {
+      crud.readUnique(long).get mustEqual (entity)
+    }
+
+    "be searchable by JSON query" in {
+      import MongoImplicits._
+      crud.searchFirst[LongEntity](jsonQuery).get mustEqual (entity)
     }
 
     "be searchable by example" in {
-      crud.findUnique(entity).unsafePerformIO().get mustEqual (entity)
+      crud.findUnique(entity).get mustEqual (entity)
     }
 
     "be updatable by example" in {
-      crud.updateFirst(update).unsafePerformIO().get mustEqual (update)
+      crud.updateFirst(update).get mustEqual (update)
+    }
+
+    "be searchable with restrictions" in {
+      failure
+    }
+
+    "be pageable in searches" in {
+
+      //      crud.searchAll[LongEntity](jsonQuery).page(10){e => doStuff(e)}
+      failure
+    }
+
+    "be stress tested in situations that use the ConsumerIterable" in {
+      // not implemented yet
+      failure
     }
   }
 
@@ -103,11 +158,11 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
 
     val crud = new MongoCrud
     val uuid = UUID.randomUUID()
-    val entity = new UuidEntity(uuid, new SimpleEntity("original", "foo"))
-    val update = new UuidEntity(uuid, new SimpleEntity("update", "bar"))
+    val entity = UuidEntity(uuid, SimpleEntity("original", "foo"))
+    val update = UuidEntity(uuid, SimpleEntity("update", "bar"))
 
     "return self from create()" in {
-      crud.create(entity).unsafePerformIO().get mustEqual (entity)
+      crud.create(entity).get mustEqual (entity)
     }
 
     "throw MongoException when create() violates constraint" in {
@@ -115,15 +170,25 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     }
 
     "be searchable by field" in {
-      crud.readUnique(uuid).unsafePerformIO().get mustEqual (entity)
+      crud.readFirst(SimpleEntity("original", "foo")).get mustEqual (entity)
+    }
+
+    "be searchable by identity field" in {
+      crud.readUnique(uuid).get mustEqual (entity)
+    }
+
+    // TODO: understand why this test fails
+    "be searchable by JSON query" in {
+      import MongoImplicits._
+      crud.searchFirst[UuidEntity]( """{"simple": {"word": "original"}}"""").get mustEqual (entity)
     }
 
     "be searchable by example" in {
-      crud.findUnique(entity).unsafePerformIO().get mustEqual (entity)
+      crud.findUnique(entity).get mustEqual (entity)
     }
 
     "be updatable by example" in {
-      crud.updateFirst(update).unsafePerformIO().get mustEqual (update)
+      crud.updateFirst(update).get mustEqual (update)
     }
   }
 }
