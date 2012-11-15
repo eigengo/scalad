@@ -1,9 +1,10 @@
 package org.cakesolutions.scalad.mongo
 
-import org.specs2.mutable.Specification
 import com.mongodb._
-import scala.util.Random
 import java.util.UUID
+import org.specs2.mutable.Specification
+import scala.math.BigInt.probablePrime
+import scala.util.Random
 import spray.json._
 
 trait MongoCrudTestAccess {
@@ -81,14 +82,9 @@ object UuidEntityPersistence {
     new UuidEntity(UUID.randomUUID(), new SimpleEntity(randomString(), randomString()))
   }
 
-  def randomString() = {
-    val nameBuffer = new StringBuilder
-    for (i <- 1 to 16) {
-      nameBuffer.append(Random.nextPrintableChar())
-    }
-    //    new Simple(Random.nextLong(), Random.nextString(16)) // results in JSON parse exceptions
-    nameBuffer.toString()
-  }
+  //Idea taken from "Scala for the impatient", chapter 1, exercise 8
+  def randomString() =  probablePrime(100, Random).toString(36) take 16
+  
 }
 
 /**
