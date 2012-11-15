@@ -29,7 +29,7 @@ package org.cakesolutions.scalad.mongo
  * return `false` once the consumer reaches the tail – a
  * fundamental difference opposite this trait.
  */
-trait ConsumerIterable[T] extends Iterable[T] {
+trait ConsumerIterator[T] extends Iterator[T] {
 
   /**
    * Instruct the backing implementation to truncate at its
