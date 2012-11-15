@@ -1,7 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
-import spray.json.{JsonParser, JsonFormat}
-import com.mongodb.{util, DBObject}
+import spray.json.{JsValue, JsObject, JsonParser, JsonFormat}
+import com.mongodb.{util, BasicDBObject, DBObject}
 
 /**
  * Uses `spray-json` to serialise/deserialise database objects via
@@ -49,8 +49,12 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
   override def serialize(entity: T): DBObject = {
     val formatter = implicitly[JsonFormat[T]]
     val jsObject = formatter.write(entity).asJsObject
-    ???
+    convertJsObject(jsObject)
   }
+
+  def convertJsObject(obj: JsObject): DBObject = new BasicDBObject().putAll(obj.getFields())
+
+  implicit def seqJsValue2ObjectMap(vals: Seq[JsValue]): Map[_,_] = ???
 
   override def deserialize(found: DBObject): T = {
     val jsObject = ???
