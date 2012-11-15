@@ -10,7 +10,7 @@ import annotation.tailrec
  * of an operation, blocking on `hasNext`. `next` will
  * not block if `hasNext` is `true`.
  */
-class ProducerConsumerIterable[T] extends ConsumerIterable[T] {
+class ProducerConsumerIterator[T] extends ConsumerIterator[T] {
 
   // ?? is there a more "Scala" way to use wait/notify
 
@@ -37,29 +37,27 @@ class ProducerConsumerIterable[T] extends ConsumerIterable[T] {
     blocker.synchronized(blocker.notify())
   }
 
-  override def iterator = new Iterator[T] {
-    @tailrec
-    override def hasNext =
-      if (!queue.isEmpty) true
-      else if (closed.get) !queue.isEmpty // non-locking optimisation
-      else {
-        lock.acquire()
-        if (closed.get) {
-          // avoids race condition with 'close'
-          lock.release()
-          !queue.isEmpty
-        } else {
-          lock.release()
-          blocker.synchronized(blocker.wait()) // will block until more is known
-          hasNext
-        }
-      }
-
-    override def next() = queue.dequeue()
-  }
-
   override def stop() {
     stopSignal set true
     blocker.synchronized(blocker.notify())
   }
+
+  @tailrec
+  override final def hasNext =
+    if (!queue.isEmpty) true
+    else if (closed.get) !queue.isEmpty // non-locking optimisation
+    else {
+      lock.acquire()
+      if (closed.get) {
+        // avoids race condition with 'close'
+        lock.release()
+        !queue.isEmpty
+      } else {
+        lock.release()
+        blocker.synchronized(blocker.wait()) // will block until more is known
+        hasNext
+      }
+    }
+
+  override def next() = queue.dequeue()
 }

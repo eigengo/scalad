@@ -37,8 +37,8 @@ trait MongoSearch {
   /**
    * @return all results from the query.
    */
-  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): ConsumerIterable[T] = {
-    val iterable = new ProducerConsumerIterable[T]
+  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): ConsumerIterator[T] = {
+    val iterable = new ProducerConsumerIterator[T]
 
     import ExecutionContext.Implicits._
     Future {
