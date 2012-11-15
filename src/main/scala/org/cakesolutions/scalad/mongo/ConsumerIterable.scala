@@ -4,6 +4,11 @@ package org.cakesolutions.scalad.mongo
  * An `Iterable` that provides a very clean interface to the
  * Producer / Consumer pattern.
  *
+ * TODO: shortly after creating this, we spotted
+ * [[scala.xml.pull.ProducerConsumerIterator]]. We will
+ * investigate the merits of our approach and if we are
+ * duplicating functionality, our Iterable classes will be dropped.
+ *
  * Both the `hasNext` and `next` methods of the `Iterator`
  * may block if the consumer catches up with the producer.
  *
@@ -24,7 +29,7 @@ package org.cakesolutions.scalad.mongo
  * return `false` once the consumer reaches the tail – a
  * fundamental difference opposite this trait.
  */
-trait ConsumerIterable[T] extends Iterable[T] {
+trait ConsumerIterator[T] extends Iterator[T] {
 
   /**
    * Instruct the backing implementation to truncate at its

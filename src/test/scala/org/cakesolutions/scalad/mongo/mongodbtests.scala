@@ -176,7 +176,7 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     // TODO: understand why this test fails
     "be searchable by JSON query" in {
       import Implicits._
-      crud.searchFirst[UuidEntity]( """{"simple": {"word": "original"}}"""").get mustEqual (entity)
+      crud.searchFirst[UuidEntity]( """{"simple": {"word": "original"}}""").get mustEqual (entity)
     }
 
     "be searchable by example" in {
