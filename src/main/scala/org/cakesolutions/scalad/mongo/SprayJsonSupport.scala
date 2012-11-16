@@ -1,7 +1,11 @@
 package org.cakesolutions.scalad.mongo
 
 import spray.json.{JsValue, JsObject, JsonParser, JsonFormat}
+import spray.json.{JsArray, JsString, JsNull, JsNumber, JsTrue, JsFalse}
 import com.mongodb.{util, BasicDBObject, DBObject}
+
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.annotation.tailrec
 
 /**
  * Uses `spray-json` to serialise/deserialise database objects via
@@ -49,12 +53,39 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
   override def serialize(entity: T): DBObject = {
     val formatter = implicitly[JsonFormat[T]]
     val jsObject = formatter.write(entity).asJsObject
-    convertJsObject(jsObject)
+
+    //I don't like this chain of data structure transformation
+    new BasicDBObject(jsObject2Map(jsObject, jsObject.fields.keys.toSeq, Map()))
   }
 
-  def convertJsObject(obj: JsObject): DBObject = new BasicDBObject().putAll(obj.getFields())
+  //Not tailrecursive, for now.
+  //This is currently broken, we need to find a way to keep the original
+  //"root" object, but still recurring on the current JsValue.
+  private def jsObject2Map(obj: JsObject, 
+                           vals: Seq[String],
+                           acc: Map[String, Object]): Map[String, Object] = vals match {
+    case Seq() => acc
+    case Seq(x, xs@_*) => obj.fields.get(x) match {
+      case Some(JsArray(a))  => {
+        val arrayFields = ???
+        //convertJsVals(obj, xs, a.map { convertJsVals(_, arrayFields, acc) } fold {(m1: Map[String,Object], m2: Map[String, Object]) =>  m1 ++ m2 } ++ acc)
+        ???
+      }
+      case Some(o@JsObject(_)) => {
+        val objFields = o.fields.keys.toSeq
+        jsObject2Map(obj, xs, jsObject2Map(o, objFields, acc))
+      }
+      case Some(JsString(s)) => jsObject2Map(obj, xs, Map(x -> s) ++ acc)
+      case Some(JsNumber(n)) => jsObject2Map(obj, xs, Map(x -> n) ++ acc)
+      case Some(JsNull)      => jsObject2Map(obj, xs, Map(x -> None) ++ acc)
+      //Probably can be collapsed
+      case Some(JsTrue)      => jsObject2Map(obj, xs, Map(x -> Boolean.box(true)) ++ acc)
+      case Some(JsFalse)     => jsObject2Map(obj, xs, Map(x -> Boolean.box(false)) ++ acc)
 
-  implicit def seqJsValue2ObjectMap(vals: Seq[JsValue]): Map[_,_] = ???
+      //should fail somehow
+      case _ => ???
+    }
+  }
 
   override def deserialize(found: DBObject): T = {
     val jsObject = ???
