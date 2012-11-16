@@ -1,5 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
+import collection.mutable.ListBuffer
+
 /**
  * An `Iterable` that provides a very clean interface to the
  * Producer / Consumer pattern.
@@ -45,5 +47,16 @@ trait ConsumerIterator[T] extends Iterator[T] {
    * which decides how many entries to store in memory from a search
    * on the database.)
    */
-  def page(entries: Int)(f: List[T] => Unit): Unit = ???
+  def page(entries: Int)(f: List[T] => Unit): Unit = {
+    require(entries > 1)
+    val buffer = new ListBuffer[T]
+    while (hasNext) {
+      buffer append next()
+      if (buffer.size % entries == 0) {
+        f(buffer.toList)
+        buffer.clear()
+      }
+    }
+    if (!buffer.isEmpty) f(buffer.toList)
+  }
 }
