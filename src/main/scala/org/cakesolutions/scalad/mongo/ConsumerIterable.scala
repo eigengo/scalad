@@ -1,5 +1,32 @@
 package org.cakesolutions.scalad.mongo
 
+import collection.mutable.ListBuffer
+
+trait Paging[T] {
+  this: Iterator[T] =>
+
+  /**
+   * Callback which limits the number of entities in each call
+   * to no more than the given parameter.
+   *
+   * (Note that paging does imply anything on the buffering strategy,
+   * which decides how many entries to store in memory from a search
+   * on the database.)
+   */
+  def page(entries: Int)(f: List[T] => Unit): Unit = {
+    require(entries > 1)
+    val buffer = new ListBuffer[T]
+    while (hasNext) {
+      buffer append next()
+      if (buffer.size % entries == 0) {
+        f(buffer.toList)
+        buffer.clear()
+      }
+    }
+    if (!buffer.isEmpty) f(buffer.toList)
+  }
+}
+
 /**
  * An `Iterable` that provides a very clean interface to the
  * Producer / Consumer pattern.
@@ -29,21 +56,11 @@ package org.cakesolutions.scalad.mongo
  * return `false` once the consumer reaches the tail – a
  * fundamental difference opposite this trait.
  */
-trait ConsumerIterator[T] extends Iterator[T] {
+trait ConsumerIterator[T] extends Iterator[T] with Paging[T] {
 
   /**
    * Instruct the backing implementation to truncate at its
    * earliest convenience and dispose of resources.
    */
   def stop()
-
-  /**
-   * Callback which limits the number of entities in each call
-   * to no more than the given parameter.
-   *
-   * (Note that paging does imply anything on the buffering strategy,
-   * which decides how many entries to store in memory from a search
-   * on the database.)
-   */
-  def page(entries: Int)(f: List[T] => Unit): Unit = ???
 }
