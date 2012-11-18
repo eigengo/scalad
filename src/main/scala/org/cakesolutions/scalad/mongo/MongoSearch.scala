@@ -1,7 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
 import com.mongodb.DBObject
-import concurrent.Future
+import concurrent.{ExecutionContext, Future}
 
 /** Search returned too many results.
   */
@@ -34,6 +34,7 @@ trait MongoSearch {
   def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): ConsumerIterator[T] = {
     val iterable = new NonblockingProducerConsumer[T]
 
+    import ExecutionContext.Implicits.global
     Future {
       val collection = implicitly[CollectionProvider[T]].getCollection
       val serialiser = implicitly[MongoSerializer[T]]
