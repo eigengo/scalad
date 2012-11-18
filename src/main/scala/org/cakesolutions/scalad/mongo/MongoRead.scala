@@ -24,11 +24,11 @@ trait MongoRead {
   }
 
   /** @return all entities matching the key-based search. */
-  def readFirst[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
-                              collectionProvider: CollectionProvider[T],
-                              serialiser: MongoSerializer[T]): Option[T] = {
+  def readAll[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
+                            collectionProvider: CollectionProvider[T],
+                            serialiser: MongoSerializer[T]): ConsumerIterator[T] = {
     val query = keyBuilder.createKeyQuery(key)
-    searchFirst(query)
+    searchAll(query)
   }
 }
 
