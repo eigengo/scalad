@@ -37,7 +37,7 @@ trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol
   implicit val LongEntityCollectionProvider = new IndexedCollectionProvider[LongEntity] {
     override def getCollection = db.getCollection("long")
 
-    override def indexFields = List("id")
+    override def uniqueFields = "{'id': 1}" :: Nil
   }
 
   // this would usually be defined elsewhere, e.g. the global Marshalling definitions
@@ -69,7 +69,7 @@ trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalli
   implicit val UuidEntityCollectionProvider = new IndexedCollectionProvider[UuidEntity] {
     override def getCollection = db.getCollection("uuid")
 
-    override def indexFields = List("id")
+    override def uniqueFields = "{'id': 1}" :: Nil
   }
 
   implicit val UuidIdAsString = new IdentityFieldAsString[UuidEntity, UUID] with IdField[UuidEntity, UUID]
