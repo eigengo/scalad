@@ -42,8 +42,7 @@ trait SprayJsonStringSerializers {
 object SprayJsonImplicits {
 
   def js2db(jsValue: JsValue): Object = {
-    import scala.collection.JavaConversions.mapAsJavaMap
-    import scala.collection.JavaConversions.seqAsJavaList
+    import scala.collection.JavaConversions.{ mapAsJavaMap, seqAsJavaList }
 
     jsValue match {
       case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
@@ -59,7 +58,39 @@ object SprayJsonImplicits {
     }
   }
 
+  def obj2js(obj: Object) : JsValue = {
+    import scala.collection.JavaConversions.{ mapAsJavaMap, mapAsScalaMap, seqAsJavaList }
+
+    obj match {
+      case a: BasicDBList => {
+        val javaArrayList = a.toArray().asInstanceOf[List[Object]]
+        JsArray(javaArrayList.map { f => obj2js(f) })
+      }
+
+      case dbObj: BasicDBObject => {
+        val javaMap = dbObj.toMap().asInstanceOf[java.util.Map[String, Object]]
+        JsObject(javaMap.map {f => (f._1, obj2js(f._2))} toMap)
+      }
+
+      case s: java.lang.String => JsString(s)
+      case uuid: java.util.UUID => JsString(uuid.toString())
+      case b: java.lang.Boolean => JsBoolean(b)
+      case i: java.lang.Integer => JsNumber(i)
+      case l: java.lang.Long => JsNumber(l)
+      case d: java.lang.Double => JsNumber(d)
+      case bi: BigInt => JsNumber(bi)
+      case bd: BigDecimal => JsNumber(bd)
+      case null => JsNull
+      case otherwise => {
+        val errMsg = "No known serialization for %s".format(otherwise.getClass)
+        throw new UnsupportedOperationException(errMsg)
+      }
+    }
+  }
+
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
+
+  implicit val ObjectToSprayJson = (obj: Object) => obj2js(obj).asInstanceOf[JsValue]
 
   implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json))
 }
@@ -78,28 +109,9 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
     formatter.write(entity)
   }
 
-  def formatter = implicitly[JsonFormat[T]]
-
   override def deserialize(found: DBObject): T = {
-
-    val jsObject = JsObject(found.toMap().asInstanceOf[Map[String, Object]])
-    val formatter = implicitly[JsonFormat[T]]
-    formatter.read(jsObject)
+    formatter.read(found)
   }
 
-  implicit def objMap2JsValueMap(found: Map[String, Object]): Map[String, JsValue] = {
-    var res: Map[String, JsValue] = Map()
-    for((k, o) <- found) {
-      o match {
-        case s: java.lang.String => res = res ++ Map(k -> JsString(s))
-        case b: java.lang.Boolean => res = res ++ Map(k -> JsBoolean(b))
-        case i: Integer => res = res ++ Map(k -> JsNumber(i))
-        case l: java.lang.Long => res ++ Map(k -> JsNumber(l))
-        case d: java.lang.Double => res = res ++ Map(k -> JsNumber(d))
-        case bi: BigInt => res = res ++ Map(k -> JsNumber(bi))
-      }
-    }
-
-    res
-  }
+  def formatter = implicitly[JsonFormat[T]]
 }
