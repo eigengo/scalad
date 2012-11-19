@@ -54,26 +54,21 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
     import scala.collection.JavaConversions.mapAsJavaMap
     val formatter = implicitly[JsonFormat[T]]
     val jsObject = formatter.write(entity).asJsObject
-
-    //I don't like this chain of data structure transformation
-    new BasicDBObject(jsObject2Map(jsObject, jsObject.fields.keys.toSeq))
+    new BasicDBObject(expandJsObject(jsObject))
   }
 
-  //Not tailrecursive, for now.
-  //Does not work for array
-  def jsObject2Map(root: JsObject, acc: Seq[String]): Map[String, Object] = acc match {
-    case Seq() => Map()
-    case Seq(x, xs@_*) => root.fields.get(x) match {
-      case Some(JsArray(a))  =>  Map(x -> ???) ++ jsObject2Map(root, xs)
-      case Some(o@JsObject(_)) => {
-        val objFields = o.fields.keys.toSeq
-        Map(x -> jsObject2Map(o, objFields)) ++ jsObject2Map(root, xs)
-      }
-      case Some(JsString(s)) => Map(x -> s) ++ jsObject2Map(root, xs)
-      case Some(JsNumber(n)) => Map(x -> n) ++ jsObject2Map(root, xs)
-      case Some(JsNull)      => Map(x -> None) ++ jsObject2Map(root, xs)
-      case Some(JsBoolean(b)) => Map(x -> Boolean.box(b))  ++ jsObject2Map(root, xs)
-    }
+  implicit def expandJsObject(o: JsObject): Map[String, Object] = {
+    val partials = o.fields.toList.map { x => jsValue2Object(x._1, x._2) }
+    partials.reduce { _ ++ _ }
+  }
+
+  def jsValue2Object(key: String, js: JsValue): Map[String, Object] = js match {
+    case JsString(s) => Map(key -> s)
+    case JsNumber(n) => Map(key -> n)
+    case JsNull => Map(key -> None)
+    case JsBoolean(b) => Map(key -> Boolean.box(b))
+    case a@JsArray(_) => Map(key -> a.elements.map(jsValue2Object(key,_)).flatten.map { _._2 })
+    case o@JsObject(_) => o
   }
 
 
