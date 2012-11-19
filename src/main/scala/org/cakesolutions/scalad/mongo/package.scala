@@ -71,6 +71,7 @@ trait IndexedCollectionProvider[T] extends CollectionProvider[T] {
   doIndex()
 
   def doIndex() {
+    // TODO: complain if the index is not created, e.g. syntax error in `String`
     uniqueFields.foreach(field => getCollection.ensureIndex(Implicits.JSON2DBObject(field), null, true))
     indexFields.foreach(field => getCollection.ensureIndex(Implicits.JSON2DBObject(field), null, false))
   }

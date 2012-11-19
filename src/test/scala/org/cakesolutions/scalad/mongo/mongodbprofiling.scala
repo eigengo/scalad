@@ -10,7 +10,7 @@ trait HandcraftedPersistence extends MongoCrudTestAccess with ImplicitIdField[Uu
   implicit val UuidEntityCollectionProvider = new IndexedCollectionProvider[UuidEntity] {
     override def getCollection = db.getCollection("uuid_hand")
 
-    override def indexFields = "{id: 1}" :: Nil
+    override def uniqueFields = "{'id': 1}" :: Nil
   }
 
   implicit val DirectSerialisation = new MongoSerializer[UuidEntity] {
