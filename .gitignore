@@ -38,3 +38,6 @@ tm.out
 tmlog*.log
 *.tm*.epoch
 out
+fabfile.py
+*.pyc
+*.swp
