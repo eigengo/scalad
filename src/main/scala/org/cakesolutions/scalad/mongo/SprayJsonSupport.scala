@@ -80,19 +80,16 @@ object SprayJsonImplicits {
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
       case d: java.lang.Double => JsNumber(d)
-      case bi: BigInt => JsNumber(bi)
+      case bi: java.math.BigInteger => JsNumber(bi)
       case bd: BigDecimal => JsNumber(bd)
       case null => JsNull
-      case otherwise => {
-        val errMsg = "No known serialization for %s".format(otherwise.getClass)
-        throw new UnsupportedOperationException(errMsg)
-      }
+      case otherwise => throw new UnsupportedOperationException("No known serialization for " ++ otherwise.toString)
     }
   }
 
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
 
-  implicit val ObjectToSprayJson = (obj: Object) => obj2js(obj).asInstanceOf[JsValue]
+  implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj).asInstanceOf[JsValue]
 
   implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json))
 }
