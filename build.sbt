@@ -40,7 +40,7 @@ javacOptions ++= Seq("-Xmx1812m", "-Xms512m", "-Xss6m")
 
 javaOptions += "-Xmx2G"
 
-scalacOptions ++= Seq("-deprecation", "-unchecked")
+scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature")
 
 maxErrors := 20 
 
