@@ -71,10 +71,13 @@ trait IndexedCollectionProvider[T] extends CollectionProvider[T] {
   doIndex()
 
   def doIndex() {
-    indexFields.foreach(field => getCollection.ensureIndex(new BasicDBObject(field, 1), null, true))
+    uniqueFields.foreach(field => getCollection.ensureIndex(new BasicDBObject(field, 1), null, true))
+    indexFields.foreach(field => getCollection.ensureIndex(new BasicDBObject(field, 1), null, false))
   }
 
-  protected def indexFields: List[String]
+  protected def uniqueFields: List[String] = Nil
+
+  protected def indexFields: List[String] = Nil
 }
 
 
