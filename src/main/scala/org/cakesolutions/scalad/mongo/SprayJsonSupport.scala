@@ -2,9 +2,7 @@ package org.cakesolutions.scalad.mongo
 
 import spray.json.{JsValue, JsObject, JsonParser, JsonFormat}
 import spray.json.{JsArray, JsBoolean, JsString, JsNull, JsNumber}
-import com.mongodb.{util, BasicDBObject, DBObject}
-
-import scala.annotation.tailrec
+import com.mongodb._
 
 /**
  * Uses `spray-json` to serialise/deserialise database objects via
@@ -41,6 +39,31 @@ trait SprayJsonStringSerializers {
 }
 
 
+object SprayJsonImplicits {
+
+  def js2db(jsValue: JsValue): Object = {
+    import scala.collection.JavaConversions.mapAsJavaMap
+    import scala.collection.JavaConversions.seqAsJavaList
+
+    jsValue match {
+      case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
+      case JsNumber(n) => n
+      case JsNull => None
+      case JsBoolean(b) => Boolean.box(b)
+      case a: JsArray => {
+        val list = new BasicDBList()
+        list.addAll(a.elements.map(f => js2db(f)))
+        list
+      }
+      case o: JsObject =>  new BasicDBObject(o.fields.map(f => (f._1, js2db(f._2))).toMap)
+    }
+  }
+
+  implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
+
+  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json))
+}
+
 /**
  * Uses `spray-json` to serialise/deserialise database objects
  * directly from `JsObject` -> `DBObject`.
@@ -49,28 +72,13 @@ trait SprayJsonStringSerializers {
  */
 class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
+  import SprayJsonImplicits._
+
   override def serialize(entity: T): DBObject = {
-    
-    import scala.collection.JavaConversions.mapAsJavaMap
-    val formatter = implicitly[JsonFormat[T]]
-    val jsObject = formatter.write(entity).asJsObject
-    new BasicDBObject(expandJsObject(jsObject))
+    formatter.write(entity)
   }
 
-  implicit def expandJsObject(o: JsObject): Map[String, Object] = {
-    val partials = o.fields.toList.map { x => jsValue2Object(x._1, x._2) }
-    partials.reduce { _ ++ _ }
-  }
-
-  def jsValue2Object(key: String, js: JsValue): Map[String, Object] = js match {
-    case JsString(s) => Map(key -> s)
-    case JsNumber(n) => Map(key -> n)
-    case JsNull => Map(key -> None)
-    case JsBoolean(b) => Map(key -> Boolean.box(b))
-    case a@JsArray(_) => Map(key -> a.elements.map(jsValue2Object(key,_)).flatten.map { _._2 })
-    case o@JsObject(_) => o
-  }
-
+  def formatter = implicitly[JsonFormat[T]]
 
   override def deserialize(found: DBObject): T = {
 
