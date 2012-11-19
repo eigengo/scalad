@@ -4,7 +4,8 @@ import com.mongodb._
 import org.specs2._
 import org.specs2.mutable.Specification
 import spray.json._
-import scala.collection.JavaConversions._
+import scala.collection.convert.WrapAsJava._
+import scala.collection.convert.WrapAsScala._
 
 case class SerializableIntEntity(id: Long, word: Int)
 

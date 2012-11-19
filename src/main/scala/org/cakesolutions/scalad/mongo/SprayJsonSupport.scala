@@ -42,7 +42,8 @@ trait SprayJsonStringSerializers {
 object SprayJsonImplicits {
 
   def js2db(jsValue: JsValue): Object = {
-    import scala.collection.JavaConversions.{ mapAsJavaMap, seqAsJavaList }
+    import scala.collection.convert.WrapAsJava._
+    import scala.collection.convert.WrapAsScala._
 
     jsValue match {
       case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
@@ -59,7 +60,8 @@ object SprayJsonImplicits {
   }
 
   def obj2js(obj: Object) : JsValue = {
-    import scala.collection.JavaConversions.{ mapAsJavaMap, mapAsScalaMap, seqAsJavaList }
+    import scala.collection.convert.WrapAsJava._
+    import scala.collection.convert.WrapAsScala._
 
     obj match {
       case a: BasicDBList => {
