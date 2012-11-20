@@ -2,10 +2,16 @@ package org.cakesolutions.scalad.mongo
 
 import com.mongodb.DBObject
 import concurrent.{ExecutionContext, Future}
+import java.util.logging.{Level, Logger}
 
 /** Search returned too many results.
   */
 case class TooManyResults(query: DBObject) extends Exception
+
+/** Makes `java.util.logging` available as a `log` field. */
+trait J2SELogging {
+  protected lazy val log = Logger.getLogger(getClass.getName)
+}
 
 /** Search using MongoDB `DBObject`s.
   *
@@ -15,7 +21,7 @@ case class TooManyResults(query: DBObject) extends Exception
   * Implicit conversions from JSON syntax or DSLs bring these methods within reach of
   * most users.
   */
-trait MongoSearch {
+trait MongoSearch extends J2SELogging {
 
   /** @return the first result from the result of the query, or `None` if nothing found. */
   def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
@@ -49,6 +55,8 @@ trait MongoSearch {
         iterable.close()
         cursor.close()
       }
+    }.onFailure {
+      case t => log.log(Level.WARNING, "Future failed", t)
     }
 
     iterable
