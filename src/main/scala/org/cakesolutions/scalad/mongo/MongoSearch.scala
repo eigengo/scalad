@@ -2,6 +2,7 @@ package org.cakesolutions.scalad.mongo
 
 import com.mongodb.DBObject
 import concurrent.{ExecutionContext, Future}
+import java.util.logging.{Level, Logger}
 
 /** Search returned too many results.
   */
@@ -49,6 +50,8 @@ trait MongoSearch {
         iterable.close()
         cursor.close()
       }
+    }.onFailure {
+      case t => Logger.getLogger("org.cakesolutions.scalad.mongo.MongoSearch").log(Level.WARNING, "Future failed", t)
     }
 
     iterable
