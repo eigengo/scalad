@@ -62,11 +62,11 @@ object SprayJsonImplicits {
   def obj2js(obj: Object) : JsValue = {
     import scala.collection.convert.WrapAsJava._
     import scala.collection.convert.WrapAsScala._
+    import scala.language.postfixOps
 
     obj match {
       case a: BasicDBList => {
-        val javaArrayList = a.toArray().asInstanceOf[Array[Object]]
-        val content: Array[JsValue] = javaArrayList.map { f => obj2js(f) } 
+        val content: Array[JsValue] = a.toArray.map { f => obj2js(f) } 
         JsArray(content: _*)
       }
 
@@ -83,7 +83,10 @@ object SprayJsonImplicits {
       case bi: java.math.BigInteger => JsNumber(bi)
       case bd: java.math.BigDecimal => JsNumber(bd)
       case null => JsNull
-      case otherwise => throw new UnsupportedOperationException("No known deserialization for " + otherwise.getClass)
+      case otherwise => {
+        val errMsg = "[%s]: No known deserialization for %s.".format(otherwise.getClass, otherwise)
+        throw new UnsupportedOperationException(errMsg)
+      }
     }
   }
 
