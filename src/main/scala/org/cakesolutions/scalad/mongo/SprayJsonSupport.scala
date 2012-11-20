@@ -48,7 +48,7 @@ object SprayJsonImplicits {
     jsValue match {
       case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
       case JsNumber(n) => n.bigDecimal
-      case JsNull => None
+      case JsNull => null
       case JsBoolean(b) => Boolean.box(b)
       case a: JsArray => {
         val list = new BasicDBList()
@@ -65,8 +65,9 @@ object SprayJsonImplicits {
 
     obj match {
       case a: BasicDBList => {
-        val javaArrayList = a.toArray().asInstanceOf[List[Object]]
-        JsArray(javaArrayList.map { f => obj2js(f) })
+        val javaArrayList = a.toArray().asInstanceOf[Array[Object]]
+        val content: Array[JsValue] = javaArrayList.map { f => obj2js(f) } 
+        JsArray(content: _*)
       }
 
       case dbObj: BasicDBObject => {
@@ -79,11 +80,10 @@ object SprayJsonImplicits {
       case b: java.lang.Boolean => JsBoolean(b)
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
-      case d: java.lang.Double => JsNumber(d)
       case bi: java.math.BigInteger => JsNumber(bi)
       case bd: java.math.BigDecimal => JsNumber(bd)
       case null => JsNull
-      case otherwise => throw new UnsupportedOperationException("No known serialization for " + otherwise.toString)
+      case otherwise => throw new UnsupportedOperationException("No known deserialization for " + otherwise.getClass)
     }
   }
 
