@@ -7,10 +7,10 @@ import com.mongodb._
 
 trait UuidChecker {
   // http://en.wikipedia.org/wiki/Universally_unique_identifier
-  val uuidRegex = """\p{XDigit}{8}(-\p{XDigit}{4}){3}-\p{XDigit}{12}""".r
+  val uuidRegex = """^\p{XDigit}{8}(-\p{XDigit}{4}){3}-\p{XDigit}{12}$""".r
 
   def isValidUuid(token: String) = {
-    token.length == 36 && !uuidRegex.findFirstIn(token).isEmpty
+    token.length == 36 && uuidRegex.findPrefixOf(token).isDefined
   }
 }
 
@@ -72,31 +72,22 @@ object SprayJsonImplicits {
   def obj2js(obj: Object) : JsValue = {
     import scala.collection.convert.WrapAsJava._
     import scala.collection.convert.WrapAsScala._
-    import scala.language.postfixOps
 
     obj match {
-      case a: BasicDBList => {
-        val content: Array[JsValue] = a.toArray.map { f => obj2js(f) } 
-        JsArray(content: _*)
-      }
-
+      case a: BasicDBList => JsArray(a.toList.map { f => obj2js(f) })
       case dbObj: BasicDBObject => {
-        val javaMap = dbObj.toMap().asInstanceOf[java.util.Map[String, Object]]
+        val javaMap = dbObj.toMap.asInstanceOf[java.util.Map[String, Object]]
         JsObject(javaMap.map {f => (f._1, obj2js(f._2))} toMap)
       }
-
       case s: java.lang.String => JsString(s)
-      case uuid: java.util.UUID => JsString(uuid.toString())
+      case uuid: java.util.UUID => JsString(uuid.toString)
       case b: java.lang.Boolean => JsBoolean(b)
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
       case bi: java.math.BigInteger => JsNumber(bi)
       case bd: java.math.BigDecimal => JsNumber(bd)
       case null => JsNull
-      case otherwise => {
-        val errMsg = "[%s]: No known deserialization for %s.".format(otherwise.getClass, otherwise)
-        throw new UnsupportedOperationException(errMsg)
-      }
+      case unsupported => throw new UnsupportedOperationException("Deserializing "+ unsupported.getClass + ": " + unsupported)
     }
   }
 
