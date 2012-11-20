@@ -10,7 +10,7 @@ case class TooManyResults(query: DBObject) extends Exception
 
 /** Makes `java.util.logging` available as a `log` field. */
 trait J2SELogging {
-  val log = Logger.getLogger(getClass.getName)
+  protected lazy val log = Logger.getLogger(getClass.getName)
 }
 
 /** Search using MongoDB `DBObject`s.
