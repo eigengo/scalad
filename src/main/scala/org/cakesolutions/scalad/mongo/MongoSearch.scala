@@ -8,6 +8,11 @@ import java.util.logging.{Level, Logger}
   */
 case class TooManyResults(query: DBObject) extends Exception
 
+/** Makes `java.util.logging` available as a `log` field. */
+trait J2SELogging {
+  val log = Logger.getLogger(getClass.getName)
+}
+
 /** Search using MongoDB `DBObject`s.
   *
   * `searchAll` returns immediately and builds up the results into an `Iterable`
@@ -16,7 +21,7 @@ case class TooManyResults(query: DBObject) extends Exception
   * Implicit conversions from JSON syntax or DSLs bring these methods within reach of
   * most users.
   */
-trait MongoSearch {
+trait MongoSearch extends J2SELogging {
 
   /** @return the first result from the result of the query, or `None` if nothing found. */
   def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
@@ -51,7 +56,7 @@ trait MongoSearch {
         cursor.close()
       }
     }.onFailure {
-      case t => Logger.getLogger("org.cakesolutions.scalad.mongo.MongoSearch").log(Level.WARNING, "Future failed", t)
+      case t => log.log(Level.WARNING, "Future failed", t)
     }
 
     iterable
