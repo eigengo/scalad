@@ -4,7 +4,8 @@ import concurrent.Lock
 import collection.mutable
 import java.util.concurrent.atomic.AtomicBoolean
 import annotation.tailrec
-import java.util.concurrent.{ConcurrentLinkedQueue, TimeUnit}
+import java.util.concurrent.ConcurrentLinkedQueue
+import concurrent.duration.Duration
 
 trait Paging[T] {
   this: Iterator[T] =>
@@ -154,9 +155,7 @@ final class NonblockingProducerConsumer[T] extends ProducerConsumerIterator[T] {
   * exception is raised from all `Iterator` methods. If no timeout
   * is used, the producer may block forever.
   */
-final class BlockingProducerConsumer[T](timeout: Option[(Long, TimeUnit)]) extends ProducerConsumerIterator[T] {
-  require(timeout.isEmpty || timeout.get._1 > 0)
-
+final class BlockingProducerConsumer[T](timeout: Option[Duration]) extends ProducerConsumerIterator[T] {
   def hasNext = ???
 
   def next() = ???
