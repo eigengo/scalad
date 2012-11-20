@@ -7,34 +7,56 @@ import spray.json._
 import scala.collection.convert.WrapAsJava._
 import scala.collection.convert.WrapAsScala._
 
-case class SerializableIntEntity(id: Long, word: Int)
+case class IntEntity(value: Int)
+case class StringEntity(value: String)
+case class BooleanEntity(value: Boolean)
+case class NullEntity(value: Option[String])
+case class JsValueEntity(value: JsValue)
 
 class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
 
-  implicit val LongEntityFormatter = jsonFormat2(LongEntity)
-  implicit val GenericEntityFormatter = jsonFormat2(SerializableIntEntity)
+  implicit val StringEntityFormatter = jsonFormat1(StringEntity)
+  implicit val IntEntityFormatter = jsonFormat1(IntEntity)
+  implicit val BooleanEntityFormatter = jsonFormat1(BooleanEntity)
+  implicit val NullEntityFormatter = jsonFormat1(NullEntity)
+  implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
+
+
+  def mustSerialize[T: JsonFormat](entity: T, expected: DBObject) {
+      val serializer = new SprayJsonSerialisation[T]
+      serializer.serialize(entity) must beEqualTo(expected)
+  }
+
+  def mustDeserialize[T: JsonFormat](entity: T) {
+      val serializer = new SprayJsonSerialisation[T]
+      serializer.deserialize(serializer.serialize(entity)) must beEqualTo(entity)
+   }
 
   "Spray-Json-base serializer" should {
 
     "be able to serialize an Int" in {
-      val serializer = new SprayJsonSerialisation[SerializableIntEntity]
-      val e1 = SerializableIntEntity(10, 20)
-      val expected = new BasicDBObject(Map("id" -> 10, "word" -> 20))
-      serializer.serialize(e1) must beEqualTo(expected)
+      mustSerialize(IntEntity(20), new BasicDBObject(Map("value" -> 20)))
     }
 
-    "be able to serialize a LongEntity" in {
-      val serializer = new SprayJsonSerialisation[LongEntity]
-      val e1 = LongEntity(23, "hello")
-      val expected = new BasicDBObject(Map("id" -> 23, "word" -> "hello"))
-      serializer.serialize(e1) must beEqualTo(expected)
+    "be able to deserialize an Int" in {
+      mustDeserialize(IntEntity(20))
     }
 
-    "be able to deserialize a LongEntity" in {
-      val serializer = new SprayJsonSerialisation[LongEntity]
-      val e1 = LongEntity(99, "original")
-      val expected = LongEntity(99, "original")
-      serializer.deserialize(serializer.serialize(e1)) must beEqualTo(expected)
+    "be able to serialize a Boolean" in {
+      mustSerialize(BooleanEntity(true), new BasicDBObject(Map("value" -> true)))
     }
+
+    "be able to deserialize an Boolean" in {
+      mustDeserialize(BooleanEntity(false))
+    }
+
+    "be able to serialize a String" in {
+      mustSerialize(StringEntity("hello"), new BasicDBObject(Map("value" -> "hello")))
+    }
+
+    "be able to deserialize a String" in {
+      mustDeserialize(StringEntity("original"))
+    }
+
   }
 }
