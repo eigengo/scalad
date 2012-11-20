@@ -47,7 +47,7 @@ object SprayJsonImplicits {
 
     jsValue match {
       case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
-      case JsNumber(n) => n
+      case JsNumber(n) => n.bigDecimal
       case JsNull => None
       case JsBoolean(b) => Boolean.box(b)
       case a: JsArray => {
