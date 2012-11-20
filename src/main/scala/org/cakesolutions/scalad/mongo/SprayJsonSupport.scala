@@ -4,6 +4,16 @@ import spray.json.{JsValue, JsObject, JsonParser, JsonFormat}
 import spray.json.{JsArray, JsBoolean, JsString, JsNull, JsNumber}
 import com.mongodb._
 
+
+trait UuidChecker {
+  // http://en.wikipedia.org/wiki/Universally_unique_identifier
+  val uuidRegex = """\p{XDigit}{8}(-\p{XDigit}{4}){3}-\p{XDigit}{12}""".r
+
+  def isValidUuid(token: String) = {
+    token.length == 36 && !uuidRegex.findFirstIn(token).isEmpty
+  }
+}
+
 /**
  * Uses `spray-json` to serialise/deserialise database objects via
  * an intermediary `String` stage to force a JSON representation of
