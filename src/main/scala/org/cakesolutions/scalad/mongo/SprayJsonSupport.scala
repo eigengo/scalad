@@ -1,8 +1,8 @@
 package org.cakesolutions.scalad.mongo
 
-import spray.json.{JsValue, JsObject, JsonParser, JsonFormat}
-import spray.json.{JsArray, JsBoolean, JsString, JsNull, JsNumber}
+import spray.json._
 import com.mongodb._
+import java.util.UUID
 
 
 trait UuidChecker {
@@ -11,6 +11,19 @@ trait UuidChecker {
 
   def isValidUuid(token: String) = {
     token.length == 36 && uuidRegex.findPrefixOf(token).isDefined
+  }
+}
+
+// might move upstream: https://github.com/spray/spray-json/issues/25
+trait UuidMarshalling {
+
+  implicit object UuidJsonFormat extends JsonFormat[UUID] {
+    def write(x: UUID) = JsString(x toString())
+
+    def read(value: JsValue) = value match {
+      case JsString(x) => UUID.fromString(x)
+      case x => deserializationError("Expected UUID as JsString, but got " + x)
+    }
   }
 }
 
@@ -49,15 +62,29 @@ trait SprayJsonStringSerializers {
 }
 
 
-object SprayJsonImplicits {
+object SprayJsonImplicits extends UuidChecker{
 
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
     import scala.collection.convert.WrapAsScala._
 
     jsValue match {
-      case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
-      case JsNumber(n) => n.bigDecimal
+      case JsString(s) => {
+        if (isValidUuid(s))
+          UUID.fromString(s)
+        else s // do some magic with mixins for special forms (Date, etc)
+      }
+      case JsNumber(n) => {
+        //We need to do such a checks because Mongo doesn't support BigDecimals
+        if (n.isValidLong)
+          new java.lang.Long(n.toLong)
+
+        //See here why we used this condition:
+        //https://issues.scala-lang.org/browse/SI-6699
+        else if (n == BigDecimal(n.toDouble))
+          new java.lang.Double(n.toDouble)
+        else throw new UnsupportedOperationException("Serializing "+ n.getClass + ": " + n) 
+      }
       case JsNull => null
       case JsBoolean(b) => Boolean.box(b)
       case a: JsArray => {
@@ -92,10 +119,15 @@ object SprayJsonImplicits {
   }
 
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
-
   implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj)
+  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json)).asInstanceOf[DBObject]
+}
 
-  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json))
+/**
+ * Mix this in to automatically get an implicit SprayJsonSerialisation in your scope
+ */
+trait SprayJsonSerializers {
+  implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
 }
 
 /**

@@ -2,6 +2,8 @@ package org.cakesolutions.scalad.mongo
 
 import com.mongodb._
 import java.util.UUID
+import org.scalacheck.Properties
+import org.scalacheck.Prop._
 import org.specs2.mutable.Specification
 import scala.math.BigInt.probablePrime
 import scala.util.Random
@@ -14,21 +16,6 @@ trait MongoCrudTestAccess {
   val db = m.getDB("MongoCrudTest")
   db.dropDatabase()
 }
-
-// might move upstream: https://github.com/spray/spray-json/issues/25
-trait UuidMarshalling {
-
-  implicit object UuidJsonFormat extends JsonFormat[UUID] {
-    def write(x: UUID) = JsString(x toString())
-
-    def read(value: JsValue) = value match {
-      case JsString(x) => UUID.fromString(x)
-      case x => deserializationError("Expected UUID as JsString, but got " + x)
-    }
-  }
-
-}
-
 
 case class LongEntity(id: Long, word: String)
 
@@ -187,4 +174,17 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
       crud.updateFirst(update).get mustEqual (update)
     }
   }
+}
+
+//These tests are bogus one to explore ScalaCheck. Please ignore them for now.
+object StringSpec extends Properties("String") {
+  property("startsWith") = forAll((a: String, b: String) => (a+b).startsWith(a))
+
+  property("concatenate") = forAll((a: String, b: String) =>
+      (a+b).length > a.length && (a+b).length > b.length
+  )
+
+  property("substring") = forAll((a: String, b: String, c: String) =>
+      (a+b+c).substring(a.length, a.length+b.length) == b
+  )
 }

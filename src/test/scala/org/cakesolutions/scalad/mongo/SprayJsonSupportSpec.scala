@@ -1,24 +1,60 @@
 package org.cakesolutions.scalad.mongo
 
 import com.mongodb._
+import java.util.UUID
 import org.specs2._
 import org.specs2.mutable.Specification
-import spray.json._
 import scala.collection.convert.WrapAsJava._
 import scala.collection.convert.WrapAsScala._
+import spray.json._
 
 case class JsValueEntity(value: JsValue)
 case class DoubleEntity(value: Double)
 
-class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
+//Bogus domain-like entities
+case class Person(name: String, surname: String)
+case class Address(road: String, number: Int)
+
+case class Student(id: Int,
+                   collegeUuid: String,
+                   name: String,
+                   parents: List[Person],
+                   address: Address,
+                   graduated: Boolean)
+
+class SprayJsonSupportTest extends Specification
+  with DefaultJsonProtocol
+  with MongoCrudTestAccess with UuidMarshalling {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
+  implicit val PersonFormatter = jsonFormat2(Person)
+  implicit val AddressFormatter = jsonFormat2(Address)
+  implicit val StudentFormatter = jsonFormat6(Student)
+  implicit val StudentSerialiser = new SprayJsonSerialisation[Student]
+  implicit val PersonSerialiser = new SprayJsonSerialisation[Person]
 
+  implicit val StudentCollectionProvider = new IndexedCollectionProvider[Student] {
+    override def getCollection = db.getCollection("student")
+    override def uniqueFields = "{'id': 1}" :: Nil
+  }
+
+  implicit val PersonCollectionProvider = new IndexedCollectionProvider[Person] {
+    override def getCollection = db.getCollection("person")
+    override def uniqueFields = "{'id': 1}" :: Nil
+  }
 
   def mustSerialize[T: JsonFormat](entity: T, expected: DBObject) {
       val serializer = new SprayJsonSerialisation[T]
       serializer.serialize(entity) must beEqualTo(expected)
+  }
+
+  /* Use this if you want to make sure you get back the same entity
+   * from the entire serialization/deserialization process.
+   */
+  def mustSerializeAndDeserialize[T: JsonFormat](entity: T) {
+      val serializer = new SprayJsonSerialisation[T]
+      serializer.deserialize(serializer.serialize(entity)) must beEqualTo(entity)
   }
 
   def mustDeserialize[T: JsonFormat](entity: DBObject, expected: T) {
@@ -47,6 +83,12 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
       val original = Map("v" -> 1.23)
       mustSerialize(original, new BasicDBObject(original))
     }
+
+    "be able to serialize a complex Double" in {
+      val original = Map("v" -> 3.141592653589793238462643383279502884197169399)
+      mustSerialize(original, new BasicDBObject(original))
+    }
+
 
     "be able to fail if asked to deserialize a raw Double" in {
       val obj = new BasicDBObject(Map("value" -> 10.1))
@@ -80,6 +122,16 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
 
     "be able to deserialize a String" in {
       val original = Map("v" -> "hello")
+      mustDeserialize(new BasicDBObject(original), original)
+    }
+
+    "be able to serialize a UUID" in {
+      val original = Map("v" -> UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+      mustSerialize(original, new BasicDBObject(original))
+    }
+
+    "be able to deserialize a UUID" in {
+      val original = Map("v" -> UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
       mustDeserialize(new BasicDBObject(original), original)
     }
 
@@ -124,10 +176,83 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
       mustDeserialize(new BasicDBObject(original), original)
     }
 
-    "be able to serialize a nested Map" in {
-      //Should the API be able to serialize/deserialize nested Maps,
-      //for example Map("a" -> Map("b" -> Map("c" -> "!")))
-      todo
+    "be able to ONLY serialize a nested Map" in {
+      //Caveat: If you want to test in isolation only the serializer,
+      //you can't simply create a new BasicDBObject out of the Scala
+      //nested Map. You need to embed the nested Map into a BasicDBObject as well!
+      val nested = Map("b" -> "c")
+      val original = Map("a" -> nested)
+      val expected = new BasicDBObject()
+      expected.put("a", new BasicDBObject(nested))
+      mustSerialize(original, expected)
+    }
+
+    "be able to serialize/deserialize a nested Map" in {
+      val original = Map("a" -> Map("b" -> Map("c" -> "!")))
+      mustSerializeAndDeserialize(original)
+    }
+
+    "be able to serialize a Person" in {
+      val original = Person("John", "Doe")
+      val expected = new BasicDBObject(Map("name" -> "John",
+                                           "surname" -> "Doe"))
+      mustSerialize(original, expected)
+    }
+
+    "be able to deserialize a Person" in {
+      mustSerializeAndDeserialize(Person("John", "Doe"))
+    }
+
+    "be able to serialize/deserialize a Student" in {
+      val original = Student(101287
+                             ,"550e8400-e29b-41d4-a716-446655440000"
+                             ,"Alfredo"
+                             ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
+                             ,Address("Foo Rd.", 91)
+                             ,false
+                             )
+      mustSerializeAndDeserialize(original)
+    }
+  }
+
+  "SprayJsonSerialisation" should {
+    sequential
+
+    val crud = new MongoCrud
+    val jsonQuery = "{'id': 101287}"
+    val student = Student(101287
+                          ,"550e8400-e29b-41d4-a716-446655440000"
+                          ,"Alfredo"
+                          ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
+                          ,Address("Foo Rd.", 91)
+                          ,false
+                          )
+
+    val studentUpdate = Student(101287
+                                ,"550e8400-e29b-41d4-a716-446655440000"
+                                ,"Alfredo Di Napoli"
+                                ,List(Person("Bar", "Bar"))
+                                ,Address("Foo Rd.", 91)
+                                ,true
+                                )
+
+    "ensure a Student is correctly persisted" in {
+      crud.create(student).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by id" in {
+      implicit val ReadByWord = new FieldQuery[Student, Int]("id")
+      crud.readFirst(101287).get must beEqualTo(student)
+    }
+
+    "be searchable by JSON query" in {
+      import SprayJsonImplicits._
+      crud.searchFirst[Student](jsonQuery).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by name" in {
+      implicit val ReadByWord = new FieldQuery[Student, String]("name")
+      crud.readFirst("Alfredo").get must beEqualTo(student)
     }
   }
 }
