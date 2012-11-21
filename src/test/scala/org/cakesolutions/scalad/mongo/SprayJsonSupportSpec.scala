@@ -11,14 +11,40 @@ import spray.json._
 case class JsValueEntity(value: JsValue)
 case class DoubleEntity(value: Double)
 
-class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with UuidMarshalling {
+//Bogus domain-like entities
+case class Person(name: String, surname: String)
+case class Address(road: String, number: Int)
+
+case class Student(id: Int,
+                   name: String,
+                   parents: List[Person],
+                   address: Address)
+
+class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with MongoCrudTestAccess with UuidMarshalling {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
+  implicit val PersonFormatter = jsonFormat2(Person)
+  implicit val AddressFormatter = jsonFormat2(Address)
+  implicit val StudentFormatter = jsonFormat4(Student)
+  implicit val StudentSerialiser = new SprayJsonSerialisation[Student]
+
+  implicit val StudentCollectionProvider = new IndexedCollectionProvider[Student] {
+    override def getCollection = db.getCollection("student")
+    override def uniqueFields = "{'id': 1}" :: Nil
+  }
 
   def mustSerialize[T: JsonFormat](entity: T, expected: DBObject) {
       val serializer = new SprayJsonSerialisation[T]
       serializer.serialize(entity) must beEqualTo(expected)
+  }
+
+  /* Use this if you want to make sure you get back the same entity
+   * from the entire serialization/deserialization process.
+   */
+  def mustSerializeAndDeserialize[T: JsonFormat](entity: T) {
+      val serializer = new SprayJsonSerialisation[T]
+      serializer.deserialize(serializer.serialize(entity)) must beEqualTo(entity)
   }
 
   def mustDeserialize[T: JsonFormat](entity: DBObject, expected: T) {
@@ -134,10 +160,61 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with U
       mustDeserialize(new BasicDBObject(original), original)
     }
 
-    "be able to serialize a nested Map" in {
-      //Should the API be able to serialize/deserialize nested Maps,
-      //for example Map("a" -> Map("b" -> Map("c" -> "!")))
-      todo
+    "be able to ONLY serialize a nested Map" in {
+      //Caveat: If you want to test in isolation only the serializer,
+      //you can't simply create a new BasicDBObject out of the Scala
+      //nested Map. You need to embed the nested Map into a BasicDBObject as well!
+      val nested = Map("b" -> "c")
+      val original = Map("a" -> nested)
+      val expected = new BasicDBObject()
+      expected.put("a", new BasicDBObject(nested))
+      mustSerialize(original, expected)
+    }
+
+    "be able to serialize/deserialize a nested Map" in {
+      val original = Map("a" -> Map("b" -> Map("c" -> "!")))
+      mustSerializeAndDeserialize(original)
+    }
+
+    "be able to serialize a Person" in {
+      val original = Person("John", "Doe")
+      val expected = new BasicDBObject(Map("name" -> "John",
+                                           "surname" -> "Doe"))
+      mustSerialize(original, expected)
+    }
+
+    "be able to deserialize a Person" in {
+      mustSerializeAndDeserialize(Person("John", "Doe"))
+    }
+
+    "be able to serialize/deserialize a Student" in {
+      val original = Student(101287
+                             ,"Alfredo"
+                             ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
+                             ,Address("Foo Rd.", 91)
+                             )
+      mustSerializeAndDeserialize(original)
+    }
+  }
+
+  "SprayJsonSerialisation" should {
+    sequential
+
+    val crud = new MongoCrud
+    val jsonQuery = "{'id': 87}"
+    val original = Student(87
+                           ,"Alfredo"
+                           ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
+                           ,Address("Foo Rd.", 91)
+                           )
+    val update = Student(87
+                         ,"Di Napoli"
+                         ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
+                         ,Address("Foo Rd.", 91)
+                         )
+
+    "ensure a student is correctly persisted" in {
+      crud.create(original).get must beEqualTo(original)
     }
   }
 }

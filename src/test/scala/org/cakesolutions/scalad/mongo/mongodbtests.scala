@@ -176,6 +176,7 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
   }
 }
 
+//These tests are bogus one to explore ScalaCheck. Please ignore them for now.
 object StringSpec extends Properties("String") {
   property("startsWith") = forAll((a: String, b: String) => (a+b).startsWith(a))
 

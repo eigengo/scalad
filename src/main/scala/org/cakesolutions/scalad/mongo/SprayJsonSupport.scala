@@ -109,10 +109,15 @@ object SprayJsonImplicits extends UuidChecker{
   }
 
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
-
   implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj)
-
   implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json))
+}
+
+/**
+ * Mix this in to automatically get an implicit SprayJsonSerialisation in your scope
+ */
+trait SprayJsonSerializers {
+  implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
 }
 
 /**
