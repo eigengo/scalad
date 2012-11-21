@@ -74,7 +74,17 @@ object SprayJsonImplicits extends UuidChecker{
           UUID.fromString(s)
         else s // do some magic with mixins for special forms (Date, etc)
       }
-      case JsNumber(n) => n.bigDecimal
+      case JsNumber(n) => {
+        //We need to do such a checks because Mongo doesn't support BigDecimals
+        if (n.isValidLong)
+          new java.lang.Long(n.toLong)
+
+        //See here why we used this condition:
+        //https://issues.scala-lang.org/browse/SI-6699
+        else if (n == BigDecimal(n.toDouble))
+          new java.lang.Double(n.toDouble)
+        else throw new UnsupportedOperationException("Serializing "+ n.getClass + ": " + n) 
+      }
       case JsNull => null
       case JsBoolean(b) => Boolean.box(b)
       case a: JsArray => {
@@ -110,7 +120,7 @@ object SprayJsonImplicits extends UuidChecker{
 
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
   implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj)
-  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json))
+  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json)).asInstanceOf[DBObject]
 }
 
 /**

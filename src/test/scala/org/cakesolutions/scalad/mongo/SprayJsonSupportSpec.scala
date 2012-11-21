@@ -16,21 +16,31 @@ case class Person(name: String, surname: String)
 case class Address(road: String, number: Int)
 
 case class Student(id: Int,
+                   collegeUuid: String,
                    name: String,
                    parents: List[Person],
-                   address: Address)
+                   address: Address,
+                   graduated: Boolean)
 
-class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with MongoCrudTestAccess with UuidMarshalling {
+class SprayJsonSupportTest extends Specification
+  with DefaultJsonProtocol
+  with MongoCrudTestAccess with UuidMarshalling {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
   implicit val PersonFormatter = jsonFormat2(Person)
   implicit val AddressFormatter = jsonFormat2(Address)
-  implicit val StudentFormatter = jsonFormat4(Student)
+  implicit val StudentFormatter = jsonFormat6(Student)
   implicit val StudentSerialiser = new SprayJsonSerialisation[Student]
+  implicit val PersonSerialiser = new SprayJsonSerialisation[Person]
 
   implicit val StudentCollectionProvider = new IndexedCollectionProvider[Student] {
     override def getCollection = db.getCollection("student")
+    override def uniqueFields = "{'id': 1}" :: Nil
+  }
+
+  implicit val PersonCollectionProvider = new IndexedCollectionProvider[Person] {
+    override def getCollection = db.getCollection("person")
     override def uniqueFields = "{'id': 1}" :: Nil
   }
 
@@ -73,6 +83,12 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with M
       val original = Map("v" -> 1.23)
       mustSerialize(original, new BasicDBObject(original))
     }
+
+    "be able to serialize a complex Double" in {
+      val original = Map("v" -> 3.141592653589793238462643383279502884197169399)
+      mustSerialize(original, new BasicDBObject(original))
+    }
+
 
     "be able to fail if asked to deserialize a raw Double" in {
       val obj = new BasicDBObject(Map("value" -> 10.1))
@@ -189,9 +205,11 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with M
 
     "be able to serialize/deserialize a Student" in {
       val original = Student(101287
+                             ,"550e8400-e29b-41d4-a716-446655440000"
                              ,"Alfredo"
                              ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                              ,Address("Foo Rd.", 91)
+                             ,false
                              )
       mustSerializeAndDeserialize(original)
     }
@@ -201,20 +219,40 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with M
     sequential
 
     val crud = new MongoCrud
-    val jsonQuery = "{'id': 87}"
-    val original = Student(87
-                           ,"Alfredo"
-                           ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
-                           ,Address("Foo Rd.", 91)
-                           )
-    val update = Student(87
-                         ,"Di Napoli"
-                         ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
-                         ,Address("Foo Rd.", 91)
-                         )
+    val jsonQuery = "{'id': 101287}"
+    val student = Student(101287
+                          ,"550e8400-e29b-41d4-a716-446655440000"
+                          ,"Alfredo"
+                          ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
+                          ,Address("Foo Rd.", 91)
+                          ,false
+                          )
 
-    "ensure a student is correctly persisted" in {
-      crud.create(original).get must beEqualTo(original)
+    val studentUpdate = Student(101287
+                                ,"550e8400-e29b-41d4-a716-446655440000"
+                                ,"Alfredo Di Napoli"
+                                ,List(Person("Bar", "Bar"))
+                                ,Address("Foo Rd.", 91)
+                                ,true
+                                )
+
+    "ensure a Student is correctly persisted" in {
+      crud.create(student).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by id" in {
+      implicit val ReadByWord = new FieldQuery[Student, Int]("id")
+      crud.readFirst(101287).get must beEqualTo(student)
+    }
+
+    "be searchable by JSON query" in {
+      import SprayJsonImplicits._
+      crud.searchFirst[Student](jsonQuery).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by name" in {
+      implicit val ReadByWord = new FieldQuery[Student, String]("name")
+      crud.readFirst("Alfredo").get must beEqualTo(student)
     }
   }
 }

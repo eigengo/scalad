@@ -34,7 +34,6 @@ trait MongoSerializer[T] {
   * Here is a good place to add an index.
   */
 trait CollectionProvider[T] {
-
   def getCollection: DBCollection
 }
 
@@ -71,7 +70,7 @@ trait IndexedCollectionProvider[T] extends CollectionProvider[T] {
   doIndex()
 
   def doIndex() {
-    import Implicits.JSON2DBObject
+    import Implicits._
     // TODO: complain if the index is not created, e.g. syntax error in `String`
     uniqueFields.foreach(field => getCollection.ensureIndex(field, null, true))
     indexFields.foreach(field => getCollection.ensureIndex(field, null, false))
