@@ -31,7 +31,8 @@ libraryDependencies <<= scalaVersion { scala_version =>
         "org.scalaz"           % "scalaz-effect"       % scalazVersion cross CrossVersion.full,
         "org.mongodb"          % "mongo-java-driver"   % "2.9.3",
         "io.spray"             % "spray-json"          % "1.2.2" cross CrossVersion.full,
-        "org.specs2"           % "specs2"              % "1.12.2" % "test"  cross CrossVersion.full
+        "org.specs2"           % "specs2"              % "1.12.2" % "test"  cross CrossVersion.full,
+        "org.scalacheck"       % "scalacheck"          % "1.10.0" % "test" cross CrossVersion.full
     )
 }
 

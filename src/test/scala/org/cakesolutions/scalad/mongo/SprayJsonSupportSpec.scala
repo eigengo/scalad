@@ -1,20 +1,20 @@
 package org.cakesolutions.scalad.mongo
 
 import com.mongodb._
+import java.util.UUID
 import org.specs2._
 import org.specs2.mutable.Specification
-import spray.json._
 import scala.collection.convert.WrapAsJava._
 import scala.collection.convert.WrapAsScala._
+import spray.json._
 
 case class JsValueEntity(value: JsValue)
 case class DoubleEntity(value: Double)
 
-class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
+class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with UuidMarshalling {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
-
 
   def mustSerialize[T: JsonFormat](entity: T, expected: DBObject) {
       val serializer = new SprayJsonSerialisation[T]
@@ -80,6 +80,16 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol {
 
     "be able to deserialize a String" in {
       val original = Map("v" -> "hello")
+      mustDeserialize(new BasicDBObject(original), original)
+    }
+
+    "be able to serialize a UUID" in {
+      val original = Map("v" -> UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+      mustSerialize(original, new BasicDBObject(original))
+    }
+
+    "be able to deserialize a UUID" in {
+      val original = Map("v" -> UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
       mustDeserialize(new BasicDBObject(original), original)
     }
 

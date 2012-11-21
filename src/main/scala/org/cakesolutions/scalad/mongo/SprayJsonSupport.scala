@@ -1,8 +1,8 @@
 package org.cakesolutions.scalad.mongo
 
-import spray.json.{JsValue, JsObject, JsonParser, JsonFormat}
-import spray.json.{JsArray, JsBoolean, JsString, JsNull, JsNumber}
+import spray.json._
 import com.mongodb._
+import java.util.UUID
 
 
 trait UuidChecker {
@@ -11,6 +11,19 @@ trait UuidChecker {
 
   def isValidUuid(token: String) = {
     token.length == 36 && !uuidRegex.findFirstIn(token).isEmpty
+  }
+}
+
+// might move upstream: https://github.com/spray/spray-json/issues/25
+trait UuidMarshalling {
+
+  implicit object UuidJsonFormat extends JsonFormat[UUID] {
+    def write(x: UUID) = JsString(x toString())
+
+    def read(value: JsValue) = value match {
+      case JsString(x) => UUID.fromString(x)
+      case x => deserializationError("Expected UUID as JsString, but got " + x)
+    }
   }
 }
 
@@ -49,14 +62,18 @@ trait SprayJsonStringSerializers {
 }
 
 
-object SprayJsonImplicits {
+object SprayJsonImplicits extends UuidChecker{
 
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
     import scala.collection.convert.WrapAsScala._
 
     jsValue match {
-      case JsString(s) => s // do some magic with mixins for special forms (UUID, Date, etc)
+      case JsString(s) => {
+        if (isValidUuid(s))
+          UUID.fromString(s)
+        else s // do some magic with mixins for special forms (Date, etc)
+      }
       case JsNumber(n) => n.bigDecimal
       case JsNull => null
       case JsBoolean(b) => Boolean.box(b)
