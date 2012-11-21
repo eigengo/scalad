@@ -4,8 +4,9 @@ import concurrent.Lock
 import collection.mutable
 import java.util.concurrent.atomic.AtomicBoolean
 import annotation.tailrec
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{LinkedBlockingQueue, ConcurrentLinkedQueue}
 import concurrent.duration.Duration
+import java.util
 
 trait Paging[T] {
   this: Iterator[T] =>
@@ -85,32 +86,17 @@ trait ProducerConsumerIterator[T] extends ConsumerIterator[T] {
   def stopped() = stopSignal.get
 }
 
-/** Appropriate in cases where the producer is not expected to
-  * create enough data to cause memory problems, regardless
-  * of consumption rate.
-  *
-  * Has an effectively infinite buffer.
-  */
-final class NonblockingProducerConsumer[T] extends ProducerConsumerIterator[T] {
+abstract protected class AbstractProducerConsumer[T] extends ProducerConsumerIterator[T] {
+
+  protected val queue: util.Queue[T]
 
   // ?? is there a more "Scala" way to use wait/notify
-
   // blocker used in hasNext, notify on changes
-  private val blocker = new AnyRef
+  protected val blocker = new AnyRef
   // lock used to avoid a race condition on close
-  private val lock = new Lock
-
-  // it may be cleaner to use mutable.SynchronizedQueue,
-  // but ConcurrentLinkedQueue is both ridiculously efficient
-  // and contains one of the greatest algorithms ever written.
-  private val queue = new ConcurrentLinkedQueue[T]()
+  protected val lock = new Lock
 
   private val closed = new AtomicBoolean
-
-  override def produce(el: T) {
-    queue add el
-    blocker.synchronized(blocker.notify())
-  }
 
   override def close() {
     lock acquire()
@@ -125,7 +111,7 @@ final class NonblockingProducerConsumer[T] extends ProducerConsumerIterator[T] {
   }
 
   @tailrec
-  override def hasNext =
+  override final def hasNext =
     if (!queue.isEmpty) true
     else if (closed.get) !queue.isEmpty // non-locking optimisation
     else {
@@ -140,51 +126,68 @@ final class NonblockingProducerConsumer[T] extends ProducerConsumerIterator[T] {
         hasNext
       }
     }
+}
+
+
+/** Appropriate in cases where the producer is not expected to
+  * create enough data to cause memory problems, regardless
+  * of consumption rate.
+  *
+  * Has an effectively infinite buffer.
+  */
+final class NonblockingProducerConsumer[T] extends AbstractProducerConsumer[T] {
+
+  // it may be cleaner to use mutable.SynchronizedQueue,
+  // but ConcurrentLinkedQueue is both ridiculously efficient
+  // and contains one of the greatest algorithms ever written.
+  protected val queue = new ConcurrentLinkedQueue[T]()
+
+  override def produce(el: T) {
+    queue add el
+    blocker.synchronized(blocker.notify())
+  }
 
   override def next() = queue.poll()
 }
 
-/** Appropriate for highly memory constrained
-  * environments where it is reasonable to block the producer
-  * to save memory use.
+/** Appropriate for memory constrained environments.
   *
   * Uses a finitely sized buffer to block the producer from adding
   * elements onto a `Queue` when the consumer is slow.
   *
   * Has an optional timeout on the block operation, at which point an
   * exception is raised from all `Iterator` methods. If no timeout
-  * is used, the producer may block forever.
+  * is used, the producer may block forever. If a zero timeout is given,
+  * the buffer must never overflow (and the producer will never be
+  * blocked).
   */
-final class BlockingProducerConsumer[T](timeout: Option[Duration]) extends ProducerConsumerIterator[T] {
-  def hasNext = ???
-
-  def next() = ???
-
-  def produce(el: T) = ???
-
-  def close() = ???
-}
-
-/** Appropriate for environments
-  * where the producer should not be blocked and slow
-  * consumers are not tolerated.
-  *
-  * Uses a finite buffer to store elements which are added
-  * to a `Queue`. Rather than block, the producer will throw exceptions.
-  *
-  * This may be viewed as a more rigorously defined version of
-  * [[org.cakesolutions.scalad.mongo.BlockingProducerConsumer]],
-  * since this does not require an arbitrary timeout value and is
-  * defined entirely in terms of the number of storage elements.
-  */
-final class FiniteProducerConsumer[T](buffer: Int) extends ProducerConsumerIterator[T] {
+final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration]) extends AbstractProducerConsumer[T] {
   require(buffer > 0)
 
-  def hasNext = ???
+  protected val queue = new LinkedBlockingQueue[T](buffer)
 
-  def next() = ???
+  private val timedout = new AtomicBoolean
 
-  def produce(el: T) = ???
+  override def produce(el: T) {
+    if (timeout.isDefined) {
+      val duration = timeout.get
+      val taken = if (duration.length == 0) {
+        queue.offer(el)
+      } else
+        queue.offer(el, duration.length, duration.unit)
+      if (!taken)
+        timedout set true
+    }
+    else
+      queue.put(el)
+    blocker.synchronized(blocker.notify())
+    timeoutCheck()
+  }
 
-  def close() = ???
+  private def timeoutCheck() = if (!stopped && timedout.get) throw new IllegalStateException(getClass + " timed out.")
+
+  override def next() = {
+    timeoutCheck()
+    queue.poll()
+  }
 }

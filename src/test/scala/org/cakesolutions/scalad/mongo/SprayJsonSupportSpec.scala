@@ -26,7 +26,7 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with U
       serializer.deserialize(entity) must beEqualTo(expected)
    }
 
-  def mustFailToDeserializeWith[T: JsonFormat, E <: Throwable](entity: DBObject)(implicit m: Manifest[E]) {
+  def mustFailToDeserializeWith[T: JsonFormat, E <: Throwable: Manifest](entity: DBObject) {
       val serializer = new SprayJsonSerialisation[T]
       serializer.deserialize(entity) must throwA[E]
    }
@@ -94,13 +94,12 @@ class SprayJsonSupportTest extends Specification with DefaultJsonProtocol with U
     }
 
     "be able to serialize a JsNull" in {
-      val original = Map("v" -> null)
-      mustSerialize(JsValueEntity(JsNull), new BasicDBObject(Map("value" -> null)))
+      mustSerialize(JsValueEntity(JsNull), new BasicDBObject("value", null))
     }
 
     "be able to deserialize a JsNull" in {
       val original = JsValueEntity(JsNull)
-      mustDeserialize(new BasicDBObject(Map("value" -> null)), original)
+      mustDeserialize(new BasicDBObject("value", null), original)
     }
 
     "be able to serialize an homogeneous List" in {
