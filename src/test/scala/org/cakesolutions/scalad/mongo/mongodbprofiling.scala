@@ -24,7 +24,8 @@ trait HandcraftedPersistence extends MongoCrudTestAccess with ImplicitIdField[Uu
         .get()
     }
 
-    def deserialize(dbObject: DBObject) = {
+    def deserialize(obj: Object) = {
+      val dbObject = obj.asInstanceOf[DBObject]
       val uuid = dbObject.get("id").asInstanceOf[UUID]
       val simple = dbObject.get("simple").asInstanceOf[DBObject]
       val word = simple.get("word").asInstanceOf[String]

@@ -46,6 +46,10 @@ class SprayJsonSupportTest extends Specification
 
   def mustSerialize[T: JsonFormat](entity: T, expected: DBObject) {
       val serializer = new SprayJsonSerialisation[T]
+      // HACK: DBObject does not guarantee that it implements equals
+      // as a workaround, we compare the JSON output, but that is no
+      // real way to compare things
+//      util.JSON.serialize(serializer.serialize(entity)) must beEqualTo(util.JSON.serialize(expected))
       serializer.serialize(entity) must beEqualTo(expected)
   }
 
@@ -210,7 +214,7 @@ class SprayJsonSupportTest extends Specification
                              ,"Alfredo"
                              ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                              ,Address("Foo Rd.", 91)
-                             ,false
+                             ,graduated = false
                              )
       mustSerializeAndDeserialize(original)
     }
@@ -231,7 +235,7 @@ class SprayJsonSupportTest extends Specification
                           ,"Alfredo"
                           ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                           ,Address("Foo Rd.", 91)
-                          ,false
+                          ,graduated = false
                           )
 
     val studentUpdate = Student(101287
@@ -239,7 +243,7 @@ class SprayJsonSupportTest extends Specification
                                 ,"Alfredo Di Napoli"
                                 ,List(Person("Bar", "Bar"))
                                 ,Address("Foo Rd.", 91)
-                                ,true
+                                ,graduated = true
                                 )
 
     "ensure a Student is correctly persisted" in {
@@ -247,17 +251,19 @@ class SprayJsonSupportTest extends Specification
     }
 
     "ensure a Student is searchable by id" in {
-      implicit val ReadByWord = new FieldQuery[Student, Int]("id")
-      crud.readFirst(101287).get must beEqualTo(student)
+      implicit val ReadByWord = new LongFieldQuery[Student]("id")
+      crud.readFirst(101287L).get must beEqualTo(student)
     }
 
     "ensure a Student is searchable by name" in {
-      implicit val ReadByWord = new FieldQuery[Student, String]("name")
+      implicit val ReadByWord = new StringFieldQuery[Student]("name")
       crud.readFirst("Alfredo").get must beEqualTo(student)
     }
 
     "ensure a Student is searchable by UUID" in {
-      implicit val ReadByUuid = new FieldQuery[Student, UUID]("collegeUuid")
+      implicit val UuidSerialiser = new SprayJsonSerialisation[UUID]
+      implicit val ReadByUuid = new SerializedFieldQueryBuilder[Student, UUID]("collegeUuid")
+
       crud.readUnique(studUuid).get must beEqualTo(student)
     }
 

@@ -1,5 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
+import com.mongodb.DBObject
+
 /** `UPDATE` Operations. */
 trait MongoUpdate {
 
@@ -11,7 +13,7 @@ trait MongoUpdate {
     val serialiser = implicitly[MongoSerializer[T]]
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
 
-    if (collection.findAndModify(id, serialiser serialize entity) != null) Some(entity)
+    if (collection.findAndModify(id, serialiser serializeDB entity) != null) Some(entity)
     else None
   }
 }

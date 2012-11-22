@@ -11,7 +11,7 @@ trait MongoCreate {
     val collection = implicitly[CollectionProvider[T]].getCollection
     val serialiser = implicitly[MongoSerializer[T]]
 
-    val result = collection.insert(serialiser serialize entity).getLastError
+    val result = collection.insert(serialiser serializeDB entity).getLastError
     if (result.ok()) Some(entity)
     else None
   }
