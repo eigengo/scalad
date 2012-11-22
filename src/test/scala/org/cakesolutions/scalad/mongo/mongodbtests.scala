@@ -160,10 +160,14 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
       crud.readUnique(uuid).get mustEqual (entity)
     }
 
-    // TODO: understand why this test fails
+    // TODO: understand why this test fails.
+    // It fails because, as weird as it may sound, you can't simply
+    // nest json object. You need to qualified the field of the object
+    // you need to find. Take a look here:
+    //http://stackoverflow.com/questions/8983482/mongodb-finding-nested-elements
     "be searchable by JSON query" in {
       import Implicits._
-      crud.searchFirst[UuidEntity]( """{"simple": {"word": "original"}}""").get mustEqual (entity)
+      crud.searchFirst[UuidEntity]( """{"simple.word": "original"}""").get mustEqual (entity)
     }
 
     "be searchable by example" in {
