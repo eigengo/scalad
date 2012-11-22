@@ -210,7 +210,7 @@ class SprayJsonSupportTest extends Specification
                              ,"Alfredo"
                              ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                              ,Address("Foo Rd.", 91)
-                             ,false
+                             ,graduated = false
                              )
       mustSerializeAndDeserialize(original)
     }
@@ -231,7 +231,7 @@ class SprayJsonSupportTest extends Specification
                           ,"Alfredo"
                           ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                           ,Address("Foo Rd.", 91)
-                          ,false
+                          ,graduated = false
                           )
 
     val studentUpdate = Student(101287
@@ -239,7 +239,7 @@ class SprayJsonSupportTest extends Specification
                                 ,"Alfredo Di Napoli"
                                 ,List(Person("Bar", "Bar"))
                                 ,Address("Foo Rd.", 91)
-                                ,true
+                                ,graduated = true
                                 )
 
     "ensure a Student is correctly persisted" in {
