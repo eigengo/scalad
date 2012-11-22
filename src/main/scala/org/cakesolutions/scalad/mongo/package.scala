@@ -25,11 +25,18 @@ trait KeyQueryBuilder[T, K] {
   def createKeyQuery(key: K): DBObject
 }
 
-/** Mechanism for converting to/from Scala types and MongoDB `DBObject`s. */
+/** Mechanism for converting to/from Scala types and MongoDB `DBObject`s.
+  *
+  * Unfortunately, the actual signatures needs to be `Object` so that
+  * "primitive" types (`String`, `java.lang.Long`, etc) are supported.
+  */
 trait MongoSerializer[T] {
-  def serialize(entity: T): DBObject
+  /** Only to be used when the entity is known to serialise non-trivially. */
+  def serializeDB(entity: T) = serialize(entity).asInstanceOf[DBObject]
 
-  def deserialize(dbObject: DBObject): T
+  def serialize(entity: T): Object
+
+  def deserialize(dbObject: Object): T
 }
 
 /** Access to a MongoDB `DBCollection`.
@@ -109,7 +116,10 @@ trait FieldIdentityQueryBuilder[T, K] extends IdentityQueryBuilder[T] {
 }
 
 /** Syntactic sugar for [[org.cakesolutions.scalad.mongo.FieldQueryBuilder]]. */
-class FieldQuery[T, K](val field: String) extends FieldQueryBuilder[T, K]
+class StringFieldQuery[T](val field: String) extends FieldQueryBuilder[T, String]
+
+/** Syntactic sugar for [[org.cakesolutions.scalad.mongo.FieldQueryBuilder]]. */
+class LongFieldQuery[T](val field: String) extends FieldQueryBuilder[T, Long]
 
 /** Conveniently mixes together two traits that are often seen together.
   */

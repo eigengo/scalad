@@ -26,6 +26,7 @@ trait UuidMarshalling {
       case x => deserializationError("Expected UUID as JsString, but got " + x)
     }
   }
+
 }
 
 /**
@@ -37,13 +38,13 @@ trait UuidMarshalling {
  */
 class SprayJsonStringSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
-  override def serialize(entity: T): DBObject = {
+  override def serialize(entity: T): Object = {
     val formatter = implicitly[JsonFormat[T]]
     val json = formatter.write(entity).compactPrint
-    util.JSON.parse(json).asInstanceOf[DBObject] // see JSON.parse and cry – this works for well formed JSON
+    util.JSON.parse(json)
   }
 
-  override def deserialize(found: DBObject): T = {
+  override def deserialize(found: Object): T = {
     val json = util.JSON.serialize(found)
     val parsed = JsonParser.apply(json)
     val formatter = implicitly[JsonFormat[T]]
@@ -64,18 +65,18 @@ trait SprayJsonStringSerializers {
 
 
 object SprayJsonImplicits extends UuidChecker with J2SELogging {
+
   import scala.language.implicitConversions
 
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
 
     jsValue match {
-      case JsString(s) => {
+      case JsString(s) =>
         if (isValidUuid(s))
           UUID.fromString(s)
         else s
-      }
-      case JsNumber(n) => {
+      case JsNumber(n) =>
         // MongoDB doesn't support arbitrary precision numbers
         if (n.isValidLong)
           new java.lang.Long(n.toLong)
@@ -83,31 +84,32 @@ object SprayJsonImplicits extends UuidChecker with J2SELogging {
           // https://issues.scala-lang.org/browse/SI-6699
           val d = n.toDouble
           if (n != BigDecimal(d))
-            log.warning("MongoDB losing precision when storing: " + n)
+            log.warning("Lost precision: " + n)
           new java.lang.Double(d)
         }
-      }
       case JsNull => null
       case JsBoolean(b) => Boolean.box(b)
-      case a: JsArray => {
+      case a: JsArray =>
         val list = new BasicDBList()
         list.addAll(a.elements.map(f => js2db(f)))
         list
-      }
-      case o: JsObject =>  new BasicDBObject(o.fields.map(f => (f._1, js2db(f._2))).toMap)
+      case o: JsObject => new BasicDBObject(o.fields.map(f => (f._1, js2db(f._2))).toMap)
     }
   }
 
-  def obj2js(obj: Object) : JsValue = {
+  def obj2js(obj: Object): JsValue = {
     import scala.language.postfixOps
     import scala.collection.convert.WrapAsScala._
 
     obj match {
-      case a: BasicDBList => JsArray(a.toList.map { f => obj2js(f) })
-      case dbObj: BasicDBObject => {
+      case a: BasicDBList => JsArray(a.toList.map {
+        f => obj2js(f)
+      })
+      case dbObj: BasicDBObject =>
         val javaMap = dbObj.toMap.asInstanceOf[java.util.Map[String, Object]]
-        JsObject(javaMap.map {f => (f._1, obj2js(f._2))} toMap)
-      }
+        JsObject(javaMap.map {
+          f => (f._1, obj2js(f._2))
+        } toMap)
       case objId: ObjectId => JsString(objId.toString)
       case s: java.lang.String => JsString(s)
       case uuid: java.util.UUID => JsString(uuid.toString)
@@ -117,13 +119,14 @@ object SprayJsonImplicits extends UuidChecker with J2SELogging {
       case bi: java.math.BigInteger => JsNumber(bi)
       case bd: java.math.BigDecimal => JsNumber(bd)
       case null => JsNull
-      case unsupported => throw new UnsupportedOperationException("Deserializing "+ unsupported.getClass + ": " + unsupported)
+      case unsupported => throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
     }
   }
 
+  // SprayJsonToDBObject will fail for trivial serialisations (e.g. a single String value)
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
-  implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj)
-  implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject.apply(JsonParser.apply(json))
+  implicit val DBObjectToSprayJson = (obj: Object) => obj2js(obj)
+  implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject(JsonParser(json))
 }
 
 /**
@@ -143,12 +146,12 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
   import SprayJsonImplicits._
 
-  override def serialize(entity: T): DBObject = {
-    formatter.write(entity)
+  override def serialize(entity: T): Object = {
+    js2db(formatter.write(entity))
   }
 
-  override def deserialize(found: DBObject): T = {
-    formatter.read(found)
+  override def deserialize(found: Object): T = {
+    formatter.read(obj2js(found))
   }
 
   def formatter = implicitly[JsonFormat[T]]
