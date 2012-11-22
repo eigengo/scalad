@@ -6,6 +6,8 @@ import com.mongodb._
   * JSON search queries to be passed instead of `DBObject`s.
   */
 object Implicits {
+  import scala.language.implicitConversions
+
   implicit var JSON2DBObject = (json: String) => util.JSON.parse(json).asInstanceOf[DBObject]
 }
 
@@ -117,6 +119,8 @@ trait IdentityField[T, K] extends FieldQueryBuilder[T, K] with FieldIdentityQuer
   * for fields named `id`.
   */
 trait IdField[T <: {def id : K}, K] {
+  import scala.language.reflectiveCalls
+
   def id(entity: T) = entity.id
 
   def field = "id"

@@ -25,7 +25,7 @@ trait MongoSelectiveSearch {
   /** @param selector called periodically to trim the results
     * @return all results from the query and passing the selection criteria.
     *         The return type is different to
-    *         [[org.cakesolutions.scalad.mongo.MongoSearch.searchAll( )]]
+    *         [[org.cakesolutions.scalad.mongo.MongoSearch.searchAll()]]
     *         and this method blocks.
     */
   def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject, selector: List[T] => List[T]): List[T] = {
