@@ -38,7 +38,7 @@ trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol
   // will mean the client has to explicitly list the search builders.
   // it is therefore best practice to create custom case classes for
   // all fields – it will also give additional type safety elsewhere.
-  implicit val ReadByWord = new FieldQuery[LongEntity, String]("word")
+  implicit val ReadByWord = new StringFieldQuery[LongEntity]("word")
 
 }
 
