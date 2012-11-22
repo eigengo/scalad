@@ -62,7 +62,7 @@ trait SprayJsonStringSerializers {
 }
 
 
-object SprayJsonImplicits extends UuidChecker{
+object SprayJsonImplicits extends UuidChecker with J2SELogging {
 
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
@@ -72,18 +72,19 @@ object SprayJsonImplicits extends UuidChecker{
       case JsString(s) => {
         if (isValidUuid(s))
           UUID.fromString(s)
-        else s // do some magic with mixins for special forms (Date, etc)
+        else s
       }
       case JsNumber(n) => {
-        //We need to do such a checks because Mongo doesn't support BigDecimals
+        // MongoDB doesn't support arbitrary precision numbers
         if (n.isValidLong)
           new java.lang.Long(n.toLong)
-
-        //See here why we used this condition:
-        //https://issues.scala-lang.org/browse/SI-6699
-        else if (n == BigDecimal(n.toDouble))
-          new java.lang.Double(n.toDouble)
-        else throw new UnsupportedOperationException("Serializing "+ n.getClass + ": " + n) 
+        else {
+          // https://issues.scala-lang.org/browse/SI-6699
+          val d = n.toDouble
+          if (n != BigDecimal(d))
+            log.warning("MongoDB losing precision when storing: " + n)
+          new java.lang.Double(d)
+        }
       }
       case JsNull => null
       case JsBoolean(b) => Boolean.box(b)
@@ -97,7 +98,6 @@ object SprayJsonImplicits extends UuidChecker{
   }
 
   def obj2js(obj: Object) : JsValue = {
-    import scala.collection.convert.WrapAsJava._
     import scala.collection.convert.WrapAsScala._
 
     obj match {
@@ -120,7 +120,7 @@ object SprayJsonImplicits extends UuidChecker{
 
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
   implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj)
-  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json)).asInstanceOf[DBObject]
+  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser(json)).asInstanceOf[DBObject]
 }
 
 /**
