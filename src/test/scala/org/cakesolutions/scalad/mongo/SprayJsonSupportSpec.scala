@@ -16,7 +16,7 @@ case class Person(name: String, surname: String)
 case class Address(road: String, number: Int)
 
 case class Student(id: Int,
-                   collegeUuid: String,
+                   collegeUuid: UUID,
                    name: String,
                    parents: List[Person],
                    address: Address,
@@ -204,8 +204,9 @@ class SprayJsonSupportTest extends Specification
     }
 
     "be able to serialize/deserialize a Student" in {
+      val uuid = UUID.randomUUID()
       val original = Student(101287
-                             ,"550e8400-e29b-41d4-a716-446655440000"
+                             ,uuid
                              ,"Alfredo"
                              ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                              ,Address("Foo Rd.", 91)
@@ -219,9 +220,14 @@ class SprayJsonSupportTest extends Specification
     sequential
 
     val crud = new MongoCrud
-    val jsonQuery = "{'id': 101287}"
+
+    //Beware: Spray-Json's parser expect you to use double quotes:
+    //https://github.com/spray/spray-json/blob/master/src/test/scala/spray/json/JsonParserSpec.scala
+    val jsonQuery = """{"id": 101287}"""
+    val nestedJsonQuery = """{"address": {"road": "Foo Rd.", "number": 91}}"""
+    val studUuid = UUID.randomUUID()
     val student = Student(101287
-                          ,"550e8400-e29b-41d4-a716-446655440000"
+                          , studUuid
                           ,"Alfredo"
                           ,List(Person("John", "Doe"), Person("Mary", "Lamb"))
                           ,Address("Foo Rd.", 91)
@@ -229,7 +235,7 @@ class SprayJsonSupportTest extends Specification
                           )
 
     val studentUpdate = Student(101287
-                                ,"550e8400-e29b-41d4-a716-446655440000"
+                                , studUuid
                                 ,"Alfredo Di Napoli"
                                 ,List(Person("Bar", "Bar"))
                                 ,Address("Foo Rd.", 91)
@@ -245,14 +251,28 @@ class SprayJsonSupportTest extends Specification
       crud.readFirst(101287).get must beEqualTo(student)
     }
 
-    "be searchable by JSON query" in {
+    "ensure a Student is searchable by name" in {
+      implicit val ReadByWord = new FieldQuery[Student, String]("name")
+      crud.readFirst("Alfredo").get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by UUID" in {
+      implicit val ReadByUuid = new FieldQuery[Student, UUID]("collegeUuid")
+      crud.readUnique(studUuid).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by JSON query" in {
       import SprayJsonImplicits._
       crud.searchFirst[Student](jsonQuery).get must beEqualTo(student)
     }
 
-    "ensure a Student is searchable by name" in {
-      implicit val ReadByWord = new FieldQuery[Student, String]("name")
-      crud.readFirst("Alfredo").get must beEqualTo(student)
+    "ensure a Student is searchable by nested JSON query" in {
+      import SprayJsonImplicits._
+
+      //Here I had to specify the WHOLE hierarchy, otherwise simply with
+      //{"address": {"number": 91}}, mongo is not able to retrieve any
+      //result
+      crud.searchFirst[Student](nestedJsonQuery).get must beEqualTo(student)
     }
   }
 }

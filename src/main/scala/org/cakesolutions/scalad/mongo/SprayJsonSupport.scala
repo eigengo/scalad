@@ -2,6 +2,7 @@ package org.cakesolutions.scalad.mongo
 
 import spray.json._
 import com.mongodb._
+import org.bson.types._
 import java.util.UUID
 
 
@@ -106,6 +107,7 @@ object SprayJsonImplicits extends UuidChecker{
         val javaMap = dbObj.toMap.asInstanceOf[java.util.Map[String, Object]]
         JsObject(javaMap.map {f => (f._1, obj2js(f._2))} toMap)
       }
+      case objId: ObjectId => JsString(objId.toString)
       case s: java.lang.String => JsString(s)
       case uuid: java.util.UUID => JsString(uuid.toString)
       case b: java.lang.Boolean => JsBoolean(b)
@@ -120,7 +122,7 @@ object SprayJsonImplicits extends UuidChecker{
 
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
   implicit val ObjectToSprayJson = (obj: DBObject) => obj2js(obj)
-  implicit val SprayStringToDBObject = (json: String) => js2db(JsonParser.apply(json)).asInstanceOf[DBObject]
+  implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject.apply(JsonParser.apply(json))
 }
 
 /**
