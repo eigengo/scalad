@@ -63,10 +63,10 @@ trait SprayJsonStringSerializers {
 
 
 object SprayJsonImplicits extends UuidChecker with J2SELogging {
+  import scala.language.implicitConversions
 
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
-    import scala.collection.convert.WrapAsScala._
 
     jsValue match {
       case JsString(s) => {
@@ -98,6 +98,7 @@ object SprayJsonImplicits extends UuidChecker with J2SELogging {
   }
 
   def obj2js(obj: Object) : JsValue = {
+    import scala.language.postfixOps
     import scala.collection.convert.WrapAsScala._
 
     obj match {
