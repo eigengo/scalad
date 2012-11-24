@@ -13,7 +13,8 @@ trait SprayJsonSerializers {
 /** Uses `spray-json` to serialise/deserialise database objects
   * directly from `JsObject` -> `DBObject`.
   *
-  * Note: `UUID` objects are persisted as `String`s not BSON.
+  * 1. `UUID` is treated as a special case and stored appropriately.
+  * 2. MongoDB does not have support for arbitrary precision numbers.
   */
 class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
