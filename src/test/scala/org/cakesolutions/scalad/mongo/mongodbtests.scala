@@ -8,6 +8,7 @@ import org.specs2.mutable.Specification
 import scala.math.BigInt.probablePrime
 import scala.util.Random
 import spray.json._
+import java.util.concurrent.atomic.AtomicInteger
 
 trait MongoCrudTestAccess {
   val m = new Mongo()
@@ -31,7 +32,7 @@ trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol
   implicit val LongEntityFormatter = jsonFormat2(LongEntity)
 
   // see UuidEntityPersistence for an alternative way to get serialisation
-  implicit val LongEntitySerialiser = new SprayJsonStringSerialisation[LongEntity]
+  implicit val LongEntitySerialiser = new SprayJsonSerialisation[LongEntity]
 
   // create a non-identity search
   // NOTE: implicitly chosen by type, so multiple fields of the same type
@@ -51,7 +52,7 @@ trait UuidEntityMarshalling extends DefaultJsonProtocol with UuidMarshalling {
   implicit val UuidEntityFormatter = jsonFormat2(UuidEntity)
 }
 
-trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalling with SprayJsonStringSerializers {
+trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalling with SprayJsonSerializers {
 
   implicit val UuidEntityCollectionProvider = new IndexedCollectionProvider[UuidEntity] {
     override def getCollection = db.getCollection("uuid")
@@ -59,7 +60,7 @@ trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalli
     override def uniqueFields = "{'id': 1}" :: Nil
   }
 
-  implicit val UuidIdAsString = new IdentityFieldAsString[UuidEntity, UUID] with IdField[UuidEntity, UUID]
+  implicit val UuidIdAsString = new IdentityField[UuidEntity, UUID] with IdField[UuidEntity, UUID]
 
   implicit val ReadBySimple = new SerializedFieldQueryBuilder[UuidEntity, SimpleEntity]("simple")
 }
@@ -69,7 +70,7 @@ object UuidEntityPersistence {
     new UuidEntity(UUID.randomUUID(), new SimpleEntity(randomString(), randomString()))
   }
 
-  //Idea taken from "Scala for the impatient", chapter 1, exercise 8
+  // Idea taken from "Scala for the impatient", chapter 1, exercise 8
   def randomString() =  probablePrime(100, Random).toString(36) take 16
   
 }
@@ -125,9 +126,10 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     }
 
     "be pageable in searches" in {
-
-      //      crud.searchAll[LongEntity](jsonQuery).page(10){e => doStuff(e)}
-      failure
+      val counter = new AtomicInteger()
+      import Implicits._
+      crud.searchAll[LongEntity](jsonQuery).page(10){e => counter.addAndGet(1)}
+      counter.get mustEqual 1
     }
 
     "be stress tested in situations that use the ConsumerIterable" in {
@@ -175,17 +177,4 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
       crud.updateFirst(update).get mustEqual (update)
     }
   }
-}
-
-//These tests are bogus one to explore ScalaCheck. Please ignore them for now.
-object StringSpec extends Properties("String") {
-  property("startsWith") = forAll((a: String, b: String) => (a+b).startsWith(a))
-
-  property("concatenate") = forAll((a: String, b: String) =>
-      (a+b).length > a.length && (a+b).length > b.length
-  )
-
-  property("substring") = forAll((a: String, b: String, c: String) =>
-      (a+b+c).substring(a.length, a.length+b.length) == b
-  )
 }
