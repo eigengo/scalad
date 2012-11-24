@@ -1,6 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
 import com.mongodb._
+import java.util.logging.Logger
 
 /** These implicits make the MongoDB API nicer to use, for example by allowing
   * JSON search queries to be passed instead of `DBObject`s.
@@ -9,6 +10,11 @@ object Implicits {
   import scala.language.implicitConversions
 
   implicit var JSON2DBObject = (json: String) => util.JSON.parse(json).asInstanceOf[DBObject]
+}
+
+/** Makes `java.util.logging` available as a `log` field. */
+trait J2SELogging {
+  protected lazy val log = Logger.getLogger(getClass.getName)
 }
 
 /** Mechanism for finding an entry in the database

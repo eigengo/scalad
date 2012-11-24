@@ -2,16 +2,11 @@ package org.cakesolutions.scalad.mongo
 
 import com.mongodb.DBObject
 import concurrent.{ExecutionContext, Future}
-import java.util.logging.{Level, Logger}
+import java.util.logging.Level
 
 /** Search returned too many results.
   */
 case class TooManyResults(query: DBObject) extends Exception
-
-/** Makes `java.util.logging` available as a `log` field. */
-trait J2SELogging {
-  protected lazy val log = Logger.getLogger(getClass.getName)
-}
 
 /** Search using MongoDB `DBObject`s.
   *
