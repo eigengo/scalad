@@ -35,7 +35,7 @@ object SprayJsonImplicits extends SprayJsonImplicits {
 
   import scala.language.implicitConversions
 
-  // SprayJsonToDBObject will fail for trivial serialisations (e.g. a single String value)
+  // SprayJsonToDBObject will fail for trivial serialisations (e.g. a single `JsString`)
   implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
   implicit val DBObjectToSprayJson = (obj: Object) => obj2js(obj)
   implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject(JsonParser(json))
