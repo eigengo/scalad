@@ -1,6 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
 import com.mongodb._
+import java.util.logging.Logger
 
 /** These implicits make the MongoDB API nicer to use, for example by allowing
   * JSON search queries to be passed instead of `DBObject`s.
@@ -9,6 +10,11 @@ object Implicits {
   import scala.language.implicitConversions
 
   implicit var JSON2DBObject = (json: String) => util.JSON.parse(json).asInstanceOf[DBObject]
+}
+
+/** Makes `java.util.logging` available as a `log` field. */
+trait J2SELogging {
+  protected lazy val log = Logger.getLogger(getClass.getName)
 }
 
 /** Mechanism for finding an entry in the database
@@ -143,24 +149,6 @@ trait IdField[T <: {def id : K}, K] {
 trait ImplicitIdField[T <: {def id : K}, K] {
   implicit val IdField = new IdentityField[T, K] with IdField[T, K]
 }
-
-
-/** Specialisation of [[org.cakesolutions.scalad.mongo.FieldQueryBuilder]]
-  * for fields that are serialized to `String` but interpreted as a special case
-  * by `BasicDBObject`, i.e. UUID.
-  */
-trait FieldAsString[T, K] extends FieldQueryBuilder[T, K] {
-  override def createKeyQuery(key: K): DBObject = new BasicDBObject(field, key.toString)
-}
-
-/** Friend of [[org.cakesolutions.scalad.mongo.FieldAsString]]. */
-trait IdentityAsString[T, K] extends FieldIdentityQueryBuilder[T, K] {
-  override def createIdQuery(entity: T): DBObject = new BasicDBObject(field, id(entity).toString)
-}
-
-/** Conveniently mixes together two traits that are often seen together. */
-trait IdentityFieldAsString[T, K] extends FieldAsString[T, K] with IdentityAsString[T, K]
-
 
 /** Provides a `read` query using serialised fields. */
 class SerializedFieldQueryBuilder[T, K](val field: String)

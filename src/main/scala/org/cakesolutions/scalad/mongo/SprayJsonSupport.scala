@@ -5,69 +5,44 @@ import com.mongodb._
 import org.bson.types._
 import java.util.UUID
 
-
-trait UuidChecker {
-  // http://en.wikipedia.org/wiki/Universally_unique_identifier
-  val uuidRegex = """^\p{XDigit}{8}(-\p{XDigit}{4}){3}-\p{XDigit}{12}$""".r
-
-  def isValidUuid(token: String) = {
-    token.length == 36 && uuidRegex.findPrefixOf(token).isDefined
-  }
+/** Mixin to get an implicit SprayJsonSerialisation in scope. */
+trait SprayJsonSerializers {
+  implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
 }
 
-// might move upstream: https://github.com/spray/spray-json/issues/25
-trait UuidMarshalling {
+/** Uses `spray-json` to serialise/deserialise database objects
+  * directly from `JsObject` -> `DBObject`.
+  *
+  * 1. `UUID` is treated as a special case and stored appropriately.
+  * 2. MongoDB does not have support for arbitrary precision numbers.
+  */
+class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
-  implicit object UuidJsonFormat extends JsonFormat[UUID] {
-    def write(x: UUID) = JsString(x toString())
-
-    def read(value: JsValue) = value match {
-      case JsString(x) => UUID.fromString(x)
-      case x => deserializationError("Expected UUID as JsString, but got " + x)
-    }
-  }
-
-}
-
-/**
- * Uses `spray-json` to serialise/deserialise database objects via
- * an intermediary `String` stage to force a JSON representation of
- * the objects.
- *
- * Note: `UUID` objects are persisted as `String`s not BSON.
- */
-class SprayJsonStringSerialisation[T: JsonFormat] extends MongoSerializer[T] {
+  import SprayJsonImplicits.{js2db, obj2js}
 
   override def serialize(entity: T): Object = {
-    val formatter = implicitly[JsonFormat[T]]
-    val json = formatter.write(entity).compactPrint
-    util.JSON.parse(json)
+    js2db(formatter.write(entity))
   }
 
   override def deserialize(found: Object): T = {
-    val json = util.JSON.serialize(found)
-    val parsed = JsonParser.apply(json)
-    val formatter = implicitly[JsonFormat[T]]
-    formatter.read(parsed)
+    formatter.read(obj2js(found))
   }
+
+  def formatter = implicitly[JsonFormat[T]]
 }
 
-/**
- * Mix this in to automatically get an implicit SprayJsonStringSerialisation in your scope
- */
-trait SprayJsonStringSerializers {
-
-  /**
-   * Construct MongoSerializer for A, if there is an instance of JsonWriter for A
-   */
-  implicit def sprayJsonStringSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonStringSerialisation[T]
-}
-
-
-object SprayJsonImplicits extends UuidChecker with J2SELogging {
+object SprayJsonImplicits extends SprayJsonImplicits {
 
   import scala.language.implicitConversions
 
+  // SprayJsonToDBObject will fail for trivial serialisations (e.g. a single `JsString`)
+  implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
+  implicit val DBObjectToSprayJson = (obj: Object) => obj2js(obj)
+  implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject(JsonParser(json))
+}
+
+
+class SprayJsonImplicits extends UuidChecker with J2SELogging {
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
 
@@ -122,37 +97,27 @@ object SprayJsonImplicits extends UuidChecker with J2SELogging {
       case unsupported => throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
     }
   }
-
-  // SprayJsonToDBObject will fail for trivial serialisations (e.g. a single String value)
-  implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
-  implicit val DBObjectToSprayJson = (obj: Object) => obj2js(obj)
-  implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject(JsonParser(json))
 }
 
-/**
- * Mix this in to automatically get an implicit SprayJsonSerialisation in your scope
- */
-trait SprayJsonSerializers {
-  implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
+trait UuidChecker {
+  // http://en.wikipedia.org/wiki/Universally_unique_identifier
+  val uuidRegex = """^\p{XDigit}{8}(-\p{XDigit}{4}){3}-\p{XDigit}{12}$""".r
+
+  def isValidUuid(token: String) = {
+    token.length == 36 && uuidRegex.findPrefixOf(token).isDefined
+  }
 }
 
-/**
- * Uses `spray-json` to serialise/deserialise database objects
- * directly from `JsObject` -> `DBObject`.
- *
- * Note: `UUID` objects are persisted as `String`s not BSON.
- */
-class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
+// might move upstream: https://github.com/spray/spray-json/issues/25
+trait UuidMarshalling {
 
-  import SprayJsonImplicits._
+  implicit object UuidJsonFormat extends JsonFormat[UUID] {
+    def write(x: UUID) = JsString(x toString())
 
-  override def serialize(entity: T): Object = {
-    js2db(formatter.write(entity))
+    def read(value: JsValue) = value match {
+      case JsString(x) => UUID.fromString(x)
+      case x => deserializationError("Expected UUID as JsString, but got " + x)
+    }
   }
 
-  override def deserialize(found: Object): T = {
-    formatter.read(obj2js(found))
-  }
-
-  def formatter = implicitly[JsonFormat[T]]
 }
