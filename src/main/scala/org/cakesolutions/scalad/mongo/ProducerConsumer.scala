@@ -45,7 +45,7 @@ trait ParallelPaging {
 
   import language.implicitConversions
 
-  implicit def PimpedParallelPager[T](it: ConsumerIterator[T]) = new ParallelPager(it)
+  implicit def PimpedParallelPager[T](it: Paging[T]) = new ParallelPager(it)
 }
 
 /** A very clean `Iterable` realisation of the
