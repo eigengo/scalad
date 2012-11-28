@@ -7,6 +7,7 @@ import annotation.tailrec
 import java.util.concurrent.{LinkedBlockingQueue, ConcurrentLinkedQueue}
 import concurrent.duration.Duration
 import java.util
+import collection.parallel.ThreadPoolTaskSupport
 
 trait Paging[T] {
   this: Iterator[T] =>
@@ -15,7 +16,7 @@ trait Paging[T] {
     *
     * (Note that paging does imply anything on the buffering strategy)
     */
-  def page(entries: Int)(f: List[T] => Unit): Unit = {
+  def page(entries: Int)(f: List[T] => Unit) {
     require(entries > 1)
     val buffer = new mutable.ListBuffer[T]
     while (hasNext) {
@@ -27,6 +28,24 @@ trait Paging[T] {
     }
     if (!buffer.isEmpty) f(buffer.toList)
   }
+}
+
+trait ParallelPaging {
+
+  class ParallelPager[T](it: Paging[T]) {
+    def foreachpage(f: T => Unit, size: Int = 100) {
+      it.page(size) {
+        page =>
+          val par = page.par
+          par.tasksupport = new ThreadPoolTaskSupport
+          par.foreach(i => f(i))
+      }
+    }
+  }
+
+  import language.implicitConversions
+
+  implicit def PimpedParallelPager[T](it: ConsumerIterator[T]) = new ParallelPager(it)
 }
 
 /** A very clean `Iterable` realisation of the
@@ -61,7 +80,9 @@ trait ConsumerIterator[T] extends Iterator[T] with Paging[T] {
   /** Instruct the implementation to truncate at its
     * earliest convenience and dispose of resources.
     */
-  def stop() = stopSignal set true
+  def stop() {
+    stopSignal set true
+  }
 }
 
 /** The producer's side of
@@ -75,11 +96,11 @@ trait ProducerConsumerIterator[T] extends ConsumerIterator[T] {
 
   /** Make an element available for the consumer.
     */
-  def produce(el: T): Unit
+  def produce(el: T)
 
   /** Finish producing.
     */
-  def close(): Unit
+  def close()
 
   /** @return `true` if the consumer instructed the producer to stop.
     */
@@ -161,7 +182,7 @@ final class NonblockingProducerConsumer[T] extends AbstractProducerConsumer[T] {
   * the buffer must never overflow (and the producer will never be
   * blocked).
   */
-final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration]) extends AbstractProducerConsumer[T] {
+final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration] = None) extends AbstractProducerConsumer[T] {
   require(buffer > 0)
 
   protected val queue = new LinkedBlockingQueue[T](buffer)
@@ -184,7 +205,9 @@ final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration]) 
     timeoutCheck()
   }
 
-  private def timeoutCheck() = if (!stopped && timedout.get) throw new IllegalStateException(getClass + " timed out.")
+  private def timeoutCheck() {
+    if (!stopped && timedout.get) throw new IllegalStateException(getClass + " timed out.")
+  }
 
   override def next() = {
     timeoutCheck()
