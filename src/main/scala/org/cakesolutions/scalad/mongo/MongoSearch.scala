@@ -33,7 +33,8 @@ trait MongoSearch extends J2SELogging {
 
   /** @return all results from the query. */
   def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject): ConsumerIterator[T] = {
-    val iterable = new NonblockingProducerConsumer[T]
+//    val iterable = new NonblockingProducerConsumer[T]
+    val iterable = new BlockingProducerConsumer[T](100)
 
     import ExecutionContext.Implicits.global
     Future {
