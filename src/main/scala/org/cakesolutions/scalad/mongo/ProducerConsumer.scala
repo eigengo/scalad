@@ -48,7 +48,7 @@ trait ParallelPaging {
   implicit def PimpedParallelPager[T](it: Paging[T]) = new ParallelPager(it)
 }
 
-/** A very clean `Iterable` realisation of the
+/** A very clean `Iterator` realisation of the
   * Producer / Consumer pattern.
   *
   * Both the `hasNext` and `next` methods of the `Iterator`
