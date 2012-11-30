@@ -1,5 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
+import com.mongodb.BasicDBObject
+
 /** `FIND` operations – i.e. requires an "example entity" to query the database.
   */
 trait MongoFind {
@@ -23,6 +25,11 @@ trait MongoFind {
   def findAll[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): ConsumerIterator[T] = {
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
     searchAll(id)
+  }
+
+  /** @return all results of the query. */
+  def findAll[T: CollectionProvider : MongoSerializer]: ConsumerIterator[T] = {
+    searchAll(new BasicDBObject())
   }
 
 }
