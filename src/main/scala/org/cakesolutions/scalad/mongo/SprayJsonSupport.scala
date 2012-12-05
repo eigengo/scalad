@@ -59,7 +59,7 @@ class SprayJsonImplicits extends UuidChecker with J2SELogging {
           // https://issues.scala-lang.org/browse/SI-6699
           val d = n.toDouble
           if (n != BigDecimal(d))
-            log.warning("Lost precision: " + n)
+            log.config("Lost precision from " + n + " to " + d)
           new java.lang.Double(d)
         }
       case JsNull => null
@@ -91,8 +91,7 @@ class SprayJsonImplicits extends UuidChecker with J2SELogging {
       case b: java.lang.Boolean => JsBoolean(b)
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
-      case bi: java.math.BigInteger => JsNumber(bi)
-      case bd: java.math.BigDecimal => JsNumber(bd)
+      case d: java.lang.Double => JsNumber(d)
       case null => JsNull
       case unsupported => throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
     }

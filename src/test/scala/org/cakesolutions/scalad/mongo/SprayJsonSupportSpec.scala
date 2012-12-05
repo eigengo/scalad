@@ -94,9 +94,9 @@ class SprayJsonSupportTest extends Specification
     }
 
 
-    "be able to fail if asked to deserialize a raw Double" in {
-      val obj = new BasicDBObject(Map("value" -> 10.1))
-      mustFailToDeserializeWith[Double, UnsupportedOperationException](obj)
+    "be able to deserialize a raw Double" in {
+      val original = Map("value" -> 10.1)
+      mustDeserialize(new BasicDBObject(original), original)
     }
 
     "be able to serialize a Long" in {
