@@ -8,6 +8,7 @@ import java.util.concurrent.{LinkedBlockingQueue, ConcurrentLinkedQueue}
 import concurrent.duration.Duration
 import java.util
 import collection.parallel.ThreadPoolTaskSupport
+import util.concurrent.locks.ReentrantLock
 
 trait Paging[T] {
   this: Iterator[T] =>
@@ -49,11 +50,18 @@ trait ParallelPaging {
 }
 
 /** A very clean `Iterator` realisation of the
-  * Producer / Consumer pattern.
+  * Producer / Consumer pattern where the producer and
+  * consumer run in separate threads.
   *
   * Both the `hasNext` and `next` methods of the `Iterator`
   * may block (e.g. when the consumer catches up with the
   * producer).
+  *
+  * This is best used by a single producer and single
+  * consumer but can be extended to multiple consumers
+  * under the caveat that `next` may return `null` following
+  * a successful `hasNext` (another thread
+  * may have grabbed it first).
   *
   * If the client wishes to cancel iteration early, the
   * `stop` method may be called to free up resources.
@@ -111,41 +119,33 @@ abstract protected class AbstractProducerConsumer[T] extends ProducerConsumerIte
 
   protected val queue: util.Queue[T]
 
-  // ?? is there a more "Scala" way to use wait/notify
-  // blocker used in hasNext, notify on changes
-  protected val blocker = new AnyRef
-  // lock used to avoid a race condition on close
-  protected val lock = new Lock
-
   private val closed = new AtomicBoolean
 
-  override def close() {
-    lock acquire()
-    closed set true
-    lock release()
-    blocker.synchronized(blocker.notify())
-  }
+  protected val lock = new ReentrantLock()
 
-  override def stop() {
-    super.stop()
-    blocker.synchronized(blocker.notify())
+  protected val change = lock.newCondition()
+
+  override def close() {
+    lock lock()
+    try {
+      closed set true
+      change signal()
+    } finally
+      lock unlock()
   }
 
   @tailrec
-  override final def hasNext =
+  override final def hasNext: Boolean =
     if (!queue.isEmpty) true
     else if (closed.get) !queue.isEmpty // non-locking optimisation
     else {
-      lock.acquire()
-      if (closed.get) {
-        // avoids race condition with 'close'
-        lock.release()
-        !queue.isEmpty
-      } else {
-        lock.release()
-        blocker.synchronized(blocker.wait()) // will block until more is known
-        hasNext
-      }
+      lock lock()
+      try {
+          if (closed.get) return !queue.isEmpty
+          change await()
+      } finally
+        lock unlock()
+      hasNext
     }
 }
 
@@ -165,7 +165,7 @@ final class NonblockingProducerConsumer[T] extends AbstractProducerConsumer[T] {
 
   override def produce(el: T) {
     queue add el
-    blocker.synchronized(blocker.notify())
+    change signal()
   }
 
   override def next() = queue.poll()
@@ -201,7 +201,7 @@ final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration] =
     }
     else
       queue.put(el)
-    blocker.synchronized(blocker.notify())
+    change signal()
     timeoutCheck()
   }
 
