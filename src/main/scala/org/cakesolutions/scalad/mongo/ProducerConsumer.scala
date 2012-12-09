@@ -165,7 +165,9 @@ final class NonblockingProducerConsumer[T] extends AbstractProducerConsumer[T] {
 
   override def produce(el: T) {
     queue add el
-    change signal()
+    lock lock()
+    try change signal()
+    finally lock unlock()
   }
 
   override def next() = queue.poll()
@@ -201,7 +203,10 @@ final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration] =
     }
     else
       queue.put(el)
-    change signal()
+
+    lock lock()
+    try change signal()
+    finally lock unlock()
     timeoutCheck()
   }
 
