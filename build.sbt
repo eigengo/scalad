@@ -7,7 +7,7 @@ version := "1.0"
 
 organization := "org.cakesolutions"
 
-scalaVersion := "2.10.0-RC3"
+scalaVersion := "2.10.0-RC5"
 
 /** Shell */
 shellPrompt := { state => System.getProperty("user.name") + "> " }
@@ -21,7 +21,7 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 resolvers += "Sonatype OSS Releases" at "http://oss.sonatype.org/content/repositories/releases/"
 
-resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
+//resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 
 publishMavenStyle := true
 
@@ -36,7 +36,7 @@ credentials += Credentials(Path.userHome / ".artifactory" / ".credentials")
 
 
 libraryDependencies <<= scalaVersion { scala_version => 
-    val scalazVersion = "7.0.0-M5"
+    val scalazVersion = "7.0.0-M6"
     Seq(
 //        "org.scalaz"           % "scalaz-effect"       % scalazVersion cross CrossVersion.full,
         "org.mongodb"          % "mongo-java-driver"   % "2.10.0",
