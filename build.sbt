@@ -7,7 +7,7 @@ version := "1.0"
 
 organization := "org.cakesolutions"
 
-scalaVersion := "2.10.0-RC5"
+scalaVersion := "2.10.0"
 
 /** Shell */
 shellPrompt := { state => System.getProperty("user.name") + "> " }
@@ -38,11 +38,11 @@ credentials += Credentials(Path.userHome / ".artifactory" / ".credentials")
 libraryDependencies <<= scalaVersion { scala_version => 
     val scalazVersion = "7.0.0-M6"
     Seq(
-//        "org.scalaz"           % "scalaz-effect"       % scalazVersion cross CrossVersion.full,
+//        "org.scalaz"           % "scalaz-effect"       % scalazVersion cross CrossVersion.binary,
         "org.mongodb"          % "mongo-java-driver"   % "2.10.0",
-        "io.spray"             % "spray-json"          % "1.2.3" cross CrossVersion.full,
-        "org.specs2"           % "specs2"              % "1.12.3" % "test"  cross CrossVersion.full,
-        "org.scalacheck"       % "scalacheck"          % "1.10.0" % "test" cross CrossVersion.full
+        "io.spray"             % "spray-json"          % "1.2.3" cross CrossVersion.binary,
+        "org.specs2"           % "specs2"              % "1.13" % "test"  cross CrossVersion.binary,
+        "org.scalacheck"       % "scalacheck"          % "1.10.0" % "test" cross CrossVersion.binary
     )
 }
 
