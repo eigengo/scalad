@@ -7,6 +7,11 @@ import java.util.{Date, UUID}
 import java.text.{ParseException, SimpleDateFormat}
 import java.net.URI
 
+
+/** Convenience that allows a collection to be setup as using Spray JSON marshalling */
+trait IndexedCollectionSprayJson[T] extends SprayJsonSerialisation[T] with IndexedCollectionProvider[T]
+
+
 /** Mixin to get an implicit SprayJsonSerialisation in scope. */
 trait SprayJsonSerializers {
   implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
