@@ -77,6 +77,7 @@ with MongoUpdate
 with MongoDelete
 with MongoRead
 with MongoFind
+with MongoCreateOrUpdate
 
 
 /** Easy way to add unique indexes to a Mongo collection. */
