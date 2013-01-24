@@ -3,7 +3,9 @@ package org.cakesolutions.scalad.mongo
 import spray.json._
 import com.mongodb._
 import org.bson.types._
-import java.util.UUID
+import java.util.{Date, UUID}
+import java.text.{ParseException, SimpleDateFormat}
+import java.net.URI
 
 /** Mixin to get an implicit SprayJsonSerialisation in scope. */
 trait SprayJsonSerializers {
@@ -118,5 +120,86 @@ trait UuidMarshalling {
       case x => deserializationError("Expected UUID as JsString, but got " + x)
     }
   }
+}
 
+trait JavaDateStringMarshalling {
+
+  implicit object JavaDateStringJsonFormat extends JsonFormat[Date] {
+
+    private val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+
+    def write(obj: Date) = formatter.synchronized(JsString(formatter.format(obj)))
+
+    def read(json: JsValue) = json match {
+      case JsString(text) =>
+        try formatter.synchronized(formatter.parse(text))
+        catch {
+          case ParseException => deserializationError("Unexpected DateFormat: " + text)
+        }
+      case x => deserializationError("Expected Date as JsNumber, but got " + x)
+    }
+  }
+}
+
+
+trait JavaDateLongMarshalling {
+
+  implicit protected object DateJsonFormat extends JsonFormat[Date] {
+    def write(x: Date) = JsNumber(x.getTime)
+
+    def read(value: JsValue) = value match {
+      case JsNumber(x) => new Date(x.toLong)
+      case x => deserializationError("Expected Date as JsNumber, but got " + x)
+    }
+  }
+
+}
+
+
+trait UriMarshalling {
+
+  implicit protected object UriJsonFormat extends JsonFormat[URI] {
+    def write(x: URI) = JsString(x toString())
+
+    def read(value: JsValue) = value match {
+      case JsString(x) => new URI(x)
+      case x => deserializationError("Expected URI as JsString, but got " + x)
+    }
+  }
+}
+
+
+/**
+ * Flattens the JSON representation of a case class that contains a single `value`
+ * element from:
+ *
+ * {{{
+ * {"value": "..."}
+ * }}}
+ *
+ * to `"..."`
+ */
+case class SingleValueCaseClassFormat[T <: {def value : V}, V](construct: V => T)(implicit delegate: JsonFormat[V]) extends JsonFormat[T] {
+
+  import scala.language.reflectiveCalls
+  override def write(obj: T) = delegate.write(obj.value)
+
+  override def read(json: JsValue) = construct(delegate.read(json))
+}
+
+
+// Marshaller for innocent case classes that don't have any parameters
+// assumes that the case classes behave like singletons
+// https://github.com/spray/spray-json/issues/41
+case class NoParamCaseClassFormat[T](instance: T) extends JsonFormat[T] {
+
+  override def write(obj: T) = JsString(instance.getClass.getSimpleName)
+
+  override def read(json: JsValue) = json match {
+    case JsString(x) =>
+      if(x != instance.getClass.getSimpleName)
+        deserializationError("Expected %s, but got %s" format (instance.getClass.getSimpleName, x))
+      instance
+    case x => deserializationError("Expected JsString, but got " + x)
+  }
 }
