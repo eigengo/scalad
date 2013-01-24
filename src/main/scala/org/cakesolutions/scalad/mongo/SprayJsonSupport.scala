@@ -139,7 +139,7 @@ trait JavaDateStringMarshalling {
       case JsString(text) =>
         try formatter.synchronized(formatter.parse(text))
         catch {
-          case ParseException => deserializationError("Unexpected DateFormat: " + text)
+          case e: ParseException => deserializationError("Unexpected DateFormat: " + text)
         }
       case x => deserializationError("Expected Date as JsNumber, but got " + x)
     }
