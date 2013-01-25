@@ -117,7 +117,7 @@ trait UuidChecker {
 // might move upstream: https://github.com/spray/spray-json/issues/25
 trait UuidMarshalling {
 
-  implicit object UuidJsonFormat extends JsonFormat[UUID] {
+  implicit object UuidJsonFormat extends RootJsonFormat[UUID] {
     def write(x: UUID) = JsString(x toString())
 
     def read(value: JsValue) = value match {
@@ -129,7 +129,7 @@ trait UuidMarshalling {
 
 trait JavaDateStringMarshalling {
 
-  implicit object JavaDateStringJsonFormat extends JsonFormat[Date] {
+  implicit object JavaDateStringJsonFormat extends RootJsonFormat[Date] {
 
     private val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
@@ -149,7 +149,7 @@ trait JavaDateStringMarshalling {
 
 trait JavaDateLongMarshalling {
 
-  implicit protected object DateJsonFormat extends JsonFormat[Date] {
+  implicit protected object DateJsonFormat extends RootJsonFormat[Date] {
     def write(x: Date) = JsNumber(x.getTime)
 
     def read(value: JsValue) = value match {
@@ -163,7 +163,7 @@ trait JavaDateLongMarshalling {
 
 trait UriMarshalling {
 
-  implicit protected object UriJsonFormat extends JsonFormat[URI] {
+  implicit protected object UriJsonFormat extends RootJsonFormat[URI] {
     def write(x: URI) = JsString(x toString())
 
     def read(value: JsValue) = value match {
@@ -184,7 +184,7 @@ trait UriMarshalling {
  *
  * to `"..."`
  */
-case class SingleValueCaseClassFormat[T <: {def value : V}, V](construct: V => T)(implicit delegate: JsonFormat[V]) extends JsonFormat[T] {
+case class SingleValueCaseClassFormat[T <: {def value : V}, V](construct: V => T)(implicit delegate: JsonFormat[V]) extends RootJsonFormat[T] {
 
   import scala.language.reflectiveCalls
   override def write(obj: T) = delegate.write(obj.value)
@@ -196,7 +196,7 @@ case class SingleValueCaseClassFormat[T <: {def value : V}, V](construct: V => T
 // Marshaller for innocent case classes that don't have any parameters
 // assumes that the case classes behave like singletons
 // https://github.com/spray/spray-json/issues/41
-case class NoParamCaseClassFormat[T](instance: T) extends JsonFormat[T] {
+case class NoParamCaseClassFormat[T](instance: T) extends RootJsonFormat[T] {
 
   override def write(obj: T) = JsString(instance.getClass.getSimpleName)
 
@@ -208,3 +208,4 @@ case class NoParamCaseClassFormat[T](instance: T) extends JsonFormat[T] {
     case x => deserializationError("Expected JsString, but got " + x)
   }
 }
+
