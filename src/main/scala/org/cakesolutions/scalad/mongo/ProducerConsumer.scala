@@ -42,6 +42,7 @@ trait ParallelPaging[T] extends Paging[T] {
         par.foreach(i => f(i))
     }
   }
+
 }
 
 /** A very clean `Iterator` realisation of the
@@ -76,7 +77,7 @@ trait ParallelPaging[T] extends Paging[T] {
   * Scala standard library encourages consumer blocking in
   * the XML Pull API: [[scala.xml.pull.ProducerConsumerIterator]].
   */
-trait ConsumerIterator[T] extends Iterator[T] with Paging[T] {
+trait ConsumerIterator[T] extends Iterator[T] with ParallelPaging[T] {
 
   protected val stopSignal = new AtomicBoolean
 
