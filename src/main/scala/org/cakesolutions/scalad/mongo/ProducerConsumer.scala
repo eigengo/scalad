@@ -1,14 +1,12 @@
 package org.cakesolutions.scalad.mongo
 
-import concurrent.Lock
 import collection.mutable
-import java.util.concurrent.atomic.AtomicBoolean
-import annotation.tailrec
-import java.util.concurrent.{LinkedBlockingQueue, ConcurrentLinkedQueue}
-import concurrent.duration.Duration
-import java.util
 import collection.parallel.ThreadPoolTaskSupport
-import util.concurrent.locks.ReentrantLock
+import annotation.tailrec
+import concurrent.duration.Duration
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{LinkedBlockingQueue, ConcurrentLinkedQueue}
+import java.util.concurrent.locks.ReentrantLock
 
 trait Paging[T] {
   this: Iterator[T] =>
@@ -31,22 +29,19 @@ trait Paging[T] {
   }
 }
 
-trait ParallelPaging {
+trait ParallelPaging[T] extends Paging[T] {
+  this: Iterator[T] =>
 
-  class ParallelPager[T](it: Paging[T]) {
-    def foreachpage(f: T => Unit, size: Int = 100) {
-      it.page(size) {
-        page =>
-          val par = page.par
-          par.tasksupport = new ThreadPoolTaskSupport
-          par.foreach(i => f(i))
-      }
+  private val pool = new ThreadPoolTaskSupport
+
+  def foreachpage(f: T => Unit, size: Int = 100) {
+    page(size) {
+      p =>
+        val par = p.par
+        par.tasksupport = pool
+        par.foreach(i => f(i))
     }
   }
-
-  import language.implicitConversions
-
-  implicit def PimpedParallelPager[T](it: Paging[T]) = new ParallelPager(it)
 }
 
 /** A very clean `Iterator` realisation of the
@@ -117,7 +112,7 @@ trait ProducerConsumerIterator[T] extends ConsumerIterator[T] {
 
 abstract protected class AbstractProducerConsumer[T] extends ProducerConsumerIterator[T] {
 
-  protected val queue: util.Queue[T]
+  protected val queue: java.util.Queue[T]
 
   private val closed = new AtomicBoolean
 
@@ -129,7 +124,7 @@ abstract protected class AbstractProducerConsumer[T] extends ProducerConsumerIte
     lock lock()
     try {
       closed set true
-      change signal()
+      change signalAll()
     } finally
       lock unlock()
   }
@@ -166,7 +161,7 @@ final class NonblockingProducerConsumer[T] extends AbstractProducerConsumer[T] {
   override def produce(el: T) {
     queue add el
     lock lock()
-    try change signal()
+    try change signalAll()
     finally lock unlock()
   }
 
@@ -205,7 +200,7 @@ final class BlockingProducerConsumer[T](buffer: Int, timeout: Option[Duration] =
       queue.put(el)
 
     lock lock()
-    try change signal()
+    try change signalAll()
     finally lock unlock()
     timeoutCheck()
   }
