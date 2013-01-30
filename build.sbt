@@ -3,7 +3,7 @@ import sbtrelease._
 /** Project */
 name := "Scalad"
 
-version := "1.0-SNAPSHOT"
+version := "1.1.0"
 
 organization := "org.cakesolutions"
 
