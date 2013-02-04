@@ -3,7 +3,7 @@ import sbtrelease._
 /** Project */
 name := "Scalad"
 
-version := "1.1.0"
+version := "1.2.0-SNAPSHOT"
 
 organization := "org.cakesolutions"
 
@@ -36,13 +36,12 @@ credentials += Credentials(Path.userHome / ".artifactory" / ".credentials")
 
 
 libraryDependencies <<= scalaVersion { scala_version => 
-    val scalazVersion = "7.0.0-M6"
     Seq(
-//        "org.scalaz"           % "scalaz-effect"       % scalazVersion cross CrossVersion.binary,
         "org.mongodb"          % "mongo-java-driver"   % "2.10.0",
-        "io.spray"             % "spray-json"          % "1.2.3" cross CrossVersion.binary,
-        "org.specs2"           % "specs2"              % "1.13" % "test"  cross CrossVersion.binary,
-        "org.scalacheck"       % "scalacheck"          % "1.10.0" % "test" cross CrossVersion.binary
+        "com.typesafe"         % "config"              % "1.0.0",
+        "io.spray"             %% "spray-json"          % "1.2.3",
+        "org.specs2"           %% "specs2"              % "1.13" % "test",
+        "org.scalacheck"       %% "scalacheck"          % "1.10.0" % "test"
     )
 }
 
