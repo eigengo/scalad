@@ -6,6 +6,7 @@ import org.bson.types._
 import java.util.{Date, UUID}
 import java.text.{ParseException, SimpleDateFormat}
 import java.net.URI
+import com.typesafe.config.ConfigFactory
 
 
 /** Convenience that allows a collection to be setup as using Spray JSON marshalling */
@@ -48,16 +49,24 @@ object SprayJsonImplicits extends SprayJsonImplicits {
   implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject(JsonParser(json))
 }
 
+class SprayJsonImplicits extends UuidChecker with IsoDateChecker with J2SELogging {
 
-class SprayJsonImplicits extends UuidChecker with J2SELogging {
+  private val evilHack = ConfigFactory.load().getBoolean("scalad.evilHack")
+
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
 
     jsValue match {
       case JsString(s) =>
-        if (isValidUuid(s))
-          UUID.fromString(s)
-        else s
+        if (evilHack) {
+          parseUuidString(s) match {
+            case None => parseIsoDateString(s) match {
+              case None => s
+              case Some(date) => date
+            }
+            case Some(uuid) => uuid
+          }
+        } else s
       case JsNumber(n) =>
         // MongoDB doesn't support arbitrary precision numbers
         if (n.isValidLong)
@@ -94,25 +103,46 @@ class SprayJsonImplicits extends UuidChecker with J2SELogging {
         } toMap)
       case objId: ObjectId => JsString(objId.toString)
       case s: java.lang.String => JsString(s)
-      case uuid: java.util.UUID => JsString(uuid.toString)
       case b: java.lang.Boolean => JsBoolean(b)
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
       case d: java.lang.Double => JsNumber(d)
       case null => JsNull
-      case unsupported => throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
+      case unsupported =>
+        if (evilHack) unsupported match {
+          case uuid: java.util.UUID => return JsString(uuid.toString)
+          case date: java.util.Date => return JsString(dateToIsoString(date))
+        }
+        throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
     }
   }
 }
 
 trait UuidChecker {
-  // http://en.wikipedia.org/wiki/Universally_unique_identifier
-  val uuidRegex = """^\p{XDigit}{8}(-\p{XDigit}{4}){3}-\p{XDigit}{12}$""".r
-
-  def isValidUuid(token: String) = {
-    token.length == 36 && uuidRegex.findPrefixOf(token).isDefined
+  def parseUuidString(token: String): Option[UUID] = {
+    if (token.length != 36) None
+    else try Some(UUID.fromString(token))
+    catch {
+      case p: IllegalArgumentException => return None
+    }
   }
 }
+
+trait IsoDateChecker {
+  private val localIsoDateFormatter = new ThreadLocal[SimpleDateFormat] {
+    override def initialValue() = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+  }
+
+  def dateToIsoString(date: Date) = localIsoDateFormatter.get().format(date)
+
+  def parseIsoDateString(date: String): Option[Date] =
+    if (date.length != 24) None
+    else try Some(localIsoDateFormatter.get().parse(date))
+    catch {
+      case p: ParseException => None
+    }
+}
+
 
 // might move upstream: https://github.com/spray/spray-json/issues/25
 trait UuidMarshalling {
@@ -129,17 +159,15 @@ trait UuidMarshalling {
 
 trait JavaDateStringMarshalling {
 
-  implicit object JavaDateStringJsonFormat extends RootJsonFormat[Date] {
+  implicit object JavaDateStringJsonFormat extends RootJsonFormat[Date] with IsoDateChecker {
 
-    private val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-
-    def write(obj: Date) = formatter.synchronized(JsString(formatter.format(obj)))
+    def write(obj: Date) = JsString(dateToIsoString(obj))
 
     def read(json: JsValue) = json match {
       case JsString(text) =>
-        try formatter.synchronized(formatter.parse(text))
-        catch {
-          case e: ParseException => deserializationError("Unexpected DateFormat: " + text)
+        try parseIsoDateString(text) match {
+          case None => deserializationError("Unexpected DateFormat: " + text)
+          case Some(date) => date
         }
       case x => deserializationError("Expected Date as JsNumber, but got " + x)
     }
