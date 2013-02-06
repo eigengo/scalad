@@ -6,10 +6,8 @@ import org.bson.types._
 import java.util.{Date, UUID}
 import java.text.{ParseException, SimpleDateFormat}
 import java.net.URI
-import com.typesafe.config.ConfigFactory
 import scala.Some
 import util.JSON
-import java.math.BigInteger
 
 
 /** Convenience that allows a collection to be setup as using Spray JSON marshalling */
@@ -21,16 +19,56 @@ trait SprayJsonSerializers {
   implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
 }
 
-/** Mixin that gives an implicit conversion from String to DBObject. */
-trait MongoQueries {
-  import scala.language.implicitConversions
-  protected implicit def stringToMongo(query: String) = JSON.parse(query).asInstanceOf[DBObject]
+object BasicSerializers extends BasicFormats {
+  implicit val StringMongoSerializer = new SprayJsonSerialisation[String]
+  implicit val LongMongoSerializer = new SprayJsonSerialisation[Long]
+  implicit val BooleanMongoSerializer = new SprayJsonSerialisation[Boolean]
+  implicit val DoubleMongoSerializer = new SprayJsonSerialisation[Double]
 }
-/** Importable that gives an implicit conversion from String to DBObject. */
-object ImplicitMongoQueries extends MongoQueries {
+
+/** Pimp that gives an implicit conversion from String to DBObject
+  * using the implicit serialisers.
+  *
+  * (Might break down for complicated objects – so test your queries thoroughly).
+  *
+  * You may wish to import
+  * [[org.cakesolutions.scalad.mongo.BasicSerializers]]
+  * to be able to perform trivial serialisations.
+  *
+  * NOTE: String queries must be surrounded with quotes.
+  */
+object MongoQueries {
   import scala.language.implicitConversions
-  implicit def StringToMongo(query: String) = stringToMongo(query)
+
+  private def stringToMongo(query: String) = JSON.parse(query).asInstanceOf[DBObject]
+
+  implicit class MongoString(query: String) {
+
+    def toBson = stringToMongo(query)
+
+    private def s[T](q: T)(implicit qs: MongoSerializer[T]) = qs.serialize(q)
+
+    // we have to do each parameter list explicitly, without * syntax,
+    // because the compiler needs to be able to get each serialiser.
+    def where[T](q1: T)(implicit q1s: MongoSerializer[T]) = {
+      stringToMongo(query format(s(q1)))
+    }
+
+    def where[T, U](q1: T, q2: U)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U]) = {
+      stringToMongo(query format(s(q1), s(q2)))
+    }
+
+    def where[T, U, V](q1: T, q2: U, q3: V)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U], q3s: MongoSerializer[V]) = {
+      stringToMongo(query format(s(q1), s(q2), s(q3)))
+    }
+
+    def where[T, U, V, W](q1: T, q2: U, q3: V, q4: W)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U], q3s: MongoSerializer[V], q4s: MongoSerializer[W]) = {
+      stringToMongo(query format(s(q1), s(q2), s(q3), s(q4)))
+    }
+  }
+
 }
+
 
 /** Uses `spray-json` to serialise/deserialise database objects
   * directly from `JsObject` -> `DBObject`.

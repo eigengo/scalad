@@ -310,17 +310,25 @@ class SprayJsonSupportTest extends Specification
     }
 
     "ensure a Student is searchable by JSON query" in {
-      import ImplicitMongoQueries._
-      crud.searchFirst[Student](jsonQuery).get must beEqualTo(student)
+      import MongoQueries._
+      crud.searchFirst[Student](jsonQuery toBson).get must beEqualTo(student)
     }
 
     "ensure a Student is searchable by nested JSON query" in {
-      import ImplicitMongoQueries._
+      import MongoQueries._
 
       //Here I had to specify the WHOLE hierarchy, otherwise simply with
       //{"address": {"number": 91}}, mongo is not able to retrieve any
       //result
-      crud.searchFirst[Student](nestedJsonQuery).get must beEqualTo(student)
+      crud.searchFirst[Student](nestedJsonQuery toBson).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by implicit MongoQuery " in {
+      import BasicSerializers._
+      import MongoQueries._
+
+      crud.searchFirst[Student]("{name: '%s'}" where("Alfredo")).get must beEqualTo(student)
+
     }
   }
 }
