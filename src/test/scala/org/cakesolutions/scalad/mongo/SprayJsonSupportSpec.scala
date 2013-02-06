@@ -26,7 +26,7 @@ case class Student(id: Int,
 
 class SprayJsonSupportTest extends Specification
   with DefaultJsonProtocol
-  with MongoCrudTestAccess with UuidMarshalling with DateMarshalling {
+  with MongoCrudTestAccess with UuidMarshalling with DateMarshalling with BigNumberMarshalling {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
@@ -151,6 +151,34 @@ class SprayJsonSupportTest extends Specification
     "be able to deserialise a Date" in {
         val json = Map("$date" -> "2013-02-04T17:51:35.479+0000")
         mustDeserialize(new Date(1360000295479L), json)
+    }
+
+    "be able to serialise a StringBigDecimal" in {
+      val string = "100000000000000.00000000000001"
+      val original = StringBigDecimal(string)
+      val expected:DBObject = new BasicDBObject("StringBigDecimal", string)
+      mustSerialize(original, expected)
+    }
+
+    "be able to deserialise a StringBigDecimal" in {
+      val string = "100000000000000.00000000000001"
+      val original = StringBigDecimal(string)
+      val expected = new BasicDBObject("StringBigDecimal", string)
+      mustDeserialize(expected, original)
+    }
+
+    "be able to serialise a StringBigInt" in {
+      val string = "10000000000000000000000000001"
+      val original = StringBigInt(string)
+      val expected:DBObject = new BasicDBObject("StringBigInt", string)
+      mustSerialize(original, expected)
+    }
+
+    "be able to deserialise a StringBigInt" in {
+      val string = "10000000000000000000000000001"
+      val original = StringBigInt(string)
+      val expected = new BasicDBObject("StringBigInt", string)
+      mustDeserialize(expected, original)
     }
 
     "be able to serialize a JsNull" in {

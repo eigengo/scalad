@@ -9,6 +9,7 @@ import java.net.URI
 import com.typesafe.config.ConfigFactory
 import scala.Some
 import util.JSON
+import java.math.BigInteger
 
 
 /** Convenience that allows a collection to be setup as using Spray JSON marshalling */
@@ -59,7 +60,6 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
   */
 trait BsonMarshalling[T] extends RootJsonFormat[T] {
 
-  // the preference is to have dollar appended keys, e.g. '$date', '$uuid'
   val key: String
   def writeString(obj: T): String
   def readString(value: String): T
@@ -102,6 +102,50 @@ trait DateMarshalling {
     }
   }
 }
+
+/** [[scala.math.BigDecimal]] wrapper that is marshalled to `String`
+  * and can therefore be persisted into MongoDB */
+case class StringBigDecimal(value: BigDecimal)
+
+object StringBigDecimal {
+  def apply(value: String) = new StringBigDecimal(BigDecimal(value))
+}
+
+/** [[scala.math.BigInt]] wrapper that is marshalled to `String`
+  * and can therefore be persisted into MongoDB */
+case class StringBigInt(value: BigInt)
+
+object StringBigInt {
+  def apply(value: String) = new StringBigInt(BigInt(value))
+}
+
+/** Alternative to [[spray.json.BasicFormats]] `JsNumber` marshalling. */
+trait BigNumberMarshalling {
+
+  implicit object StringBigDecimalJsonFormat extends BsonMarshalling[StringBigDecimal] {
+
+    override val key = "StringBigDecimal"
+    override def writeString(obj: StringBigDecimal) = obj.value.toString()
+    override def readString(value: String) = try StringBigDecimal(value)
+      catch {
+        case e: NumberFormatException =>
+          deserializationError("Expected StringBigDecimal format, got %s" format(value))
+      }
+  }
+
+  implicit object StringBigIntJsonFormat extends BsonMarshalling[StringBigInt] {
+
+    override val key = "StringBigInt"
+    override def writeString(obj: StringBigInt) = obj.value.toString()
+    override def readString(value: String) = try StringBigInt(value)
+    catch {
+      case e: NumberFormatException =>
+        deserializationError("Expected StringBigInt format, got %s" format(value))
+    }
+  }
+
+}
+
 
 object SprayJsonConvertors extends SprayJsonConvertors
 
