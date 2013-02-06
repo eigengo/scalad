@@ -43,9 +43,9 @@ val db = new Mongo(...)
 // tell ScalaD to associate a named collection to the case class
 // and to add some indexes and uniqueness constraints
 implicit val MyCaseClassProvider = new IndexedCollectionSprayJson[MyCaseClass] {
-    override def getCollection = db.getCollection("merchants")
-    override def uniqueFields = "{'id': 1}" :: Nil // MongoDB syntax (including composite constraints)
-    override def indexFields = "{'name': -1}" :: Nil
+    override def getCollection = db.getCollection("entities")
+    override def uniqueFields = "{'id': 1}" :: Nil // MongoDB syntax
+    override def indexFields = "{'name': -1}" :: Nil // reverse order index
 }
 ```
 
@@ -111,6 +111,8 @@ implicit val MyOtherCaseClassProvider = new IndexedCollectionSprayJson[MyOtherCa
 }
 ```
 
+If the update that you have made to an entity has changed one of the identity keys (and you still want to consider the object to be the same as the pre-changed version) then you can use `crud.update(old, new)`.
+
 
 ## FieldQuery
 
@@ -174,3 +176,5 @@ If you want to use arbitrary precision numbers, we provide case classes (and Spr
 ```
 
 which can be understood by both clients of endpoints and do not lose their precision when saved in MongoDB.
+
+Be warned that although Spray JSON will correctly marshall raw `BigInt`s and `BigDecimal`s, MongoDB will silently drop the precision (ScalaD will detect this and create a log for every object that loses precision, so hopefully this is caught at development time).
