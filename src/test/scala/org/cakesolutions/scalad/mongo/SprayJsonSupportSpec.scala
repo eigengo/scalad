@@ -26,7 +26,7 @@ case class Student(id: Int,
 
 class SprayJsonSupportTest extends Specification
   with DefaultJsonProtocol
-  with MongoCrudTestAccess with UuidMarshalling with JavaDateStringMarshalling {
+  with MongoCrudTestAccess with UuidMarshalling with DateMarshalling with BigNumberMarshalling {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
@@ -46,7 +46,7 @@ class SprayJsonSupportTest extends Specification
     override def uniqueFields = "{'id': 1}" :: Nil
   }
 
-  def mustSerialize[T: JsonFormat](entity: T, expected: DBObject) {
+  def mustSerialize[T: JsonFormat](entity: T, expected: Object) {
       val serializer = new SprayJsonSerialisation[T]
       // HACK: DBObject does not guarantee that it implements equals
       // as a workaround, we compare the JSON output, but that is no
@@ -63,7 +63,7 @@ class SprayJsonSupportTest extends Specification
       serializer.deserialize(serializer.serialize(entity)) must beEqualTo(entity)
   }
 
-  def mustDeserialize[T: JsonFormat](entity: DBObject, expected: T) {
+  def mustDeserialize[T: JsonFormat](entity: Object, expected: T) {
       val serializer = new SprayJsonSerialisation[T]
       serializer.deserialize(entity) must beEqualTo(expected)
    }
@@ -132,45 +132,53 @@ class SprayJsonSupportTest extends Specification
     }
 
     "be able to serialize a UUID" in {
-      if (!ConfigFactory.load().getBoolean("scalad.evilHack")) todo
-      else {
-        val original = Map("v" -> UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
-        mustSerialize(original, new BasicDBObject(original))
-        success
-      }
+      val string = "550e8400-e29b-41d4-a716-446655440000"
+      val json = Map("$uuid" -> string)
+      mustSerialize(json, UUID.fromString(string))
     }
 
     "be able to deserialize a UUID" in {
-      if (!ConfigFactory.load().getBoolean("scalad.evilHack")) todo
-      else {
-        val original = Map("v" -> UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
-        mustDeserialize(new BasicDBObject(original), original)
-        success
-      }
+       val string = "550e8400-e29b-41d4-a716-446655440000"
+       val json = Map("$uuid" -> string)
+       mustDeserialize(UUID.fromString(string), json)
     }
 
     "be able to serialise a Date" in {
-      if (!ConfigFactory.load().getBoolean("scalad.evilHack")) todo
-      else {
-        // milliseconds fail, because they are not ISO
-        //        val original = Map("v" -> new Date(1360000295479L))
-        val original = Map("v" -> new Date(1360000295000L))
-        val json = Map("v" -> "2013-02-04T17:51:35+0000")
-        mustSerialize(json, new BasicDBObject(original))
-        success
-      }
+      val json = Map("$date" -> "2013-02-04T17:51:35.479+0000")
+      mustSerialize(json, new Date(1360000295479L))
     }
 
     "be able to deserialise a Date" in {
-      if (!ConfigFactory.load().getBoolean("scalad.evilHack")) todo
-      else {
-        // milliseconds fail, because they are not ISO
-//        val original = Map("v" -> new Date(1360000295479L))
-        val original = Map("v" -> new Date(1360000295000L))
-        val json = Map("v" -> "2013-02-04T17:51:35+0000")
-        mustDeserialize(new BasicDBObject(original), json)
-        success
-      }
+        val json = Map("$date" -> "2013-02-04T17:51:35.479+0000")
+        mustDeserialize(new Date(1360000295479L), json)
+    }
+
+    "be able to serialise a StringBigDecimal" in {
+      val string = "100000000000000.00000000000001"
+      val original = StringBigDecimal(string)
+      val expected:DBObject = new BasicDBObject("StringBigDecimal", string)
+      mustSerialize(original, expected)
+    }
+
+    "be able to deserialise a StringBigDecimal" in {
+      val string = "100000000000000.00000000000001"
+      val original = StringBigDecimal(string)
+      val expected = new BasicDBObject("StringBigDecimal", string)
+      mustDeserialize(expected, original)
+    }
+
+    "be able to serialise a StringBigInt" in {
+      val string = "10000000000000000000000000001"
+      val original = StringBigInt(string)
+      val expected:DBObject = new BasicDBObject("StringBigInt", string)
+      mustSerialize(original, expected)
+    }
+
+    "be able to deserialise a StringBigInt" in {
+      val string = "10000000000000000000000000001"
+      val original = StringBigInt(string)
+      val expected = new BasicDBObject("StringBigInt", string)
+      mustDeserialize(expected, original)
     }
 
     "be able to serialize a JsNull" in {
@@ -302,17 +310,25 @@ class SprayJsonSupportTest extends Specification
     }
 
     "ensure a Student is searchable by JSON query" in {
-      import SprayJsonImplicits._
-      crud.searchFirst[Student](jsonQuery).get must beEqualTo(student)
+      import MongoQueries._
+      crud.searchFirst[Student](jsonQuery toBson).get must beEqualTo(student)
     }
 
     "ensure a Student is searchable by nested JSON query" in {
-      import SprayJsonImplicits._
+      import MongoQueries._
 
       //Here I had to specify the WHOLE hierarchy, otherwise simply with
       //{"address": {"number": 91}}, mongo is not able to retrieve any
       //result
-      crud.searchFirst[Student](nestedJsonQuery).get must beEqualTo(student)
+      crud.searchFirst[Student](nestedJsonQuery toBson).get must beEqualTo(student)
+    }
+
+    "ensure a Student is searchable by implicit MongoQuery " in {
+      import BasicSerializers._
+      import MongoQueries._
+
+      crud.searchFirst[Student]("{name: '%s'}" where("Alfredo")).get must beEqualTo(student)
+
     }
   }
 }
