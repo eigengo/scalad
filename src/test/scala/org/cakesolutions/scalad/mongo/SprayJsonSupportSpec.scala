@@ -324,10 +324,9 @@ class SprayJsonSupportTest extends Specification
     }
 
     "ensure a Student is searchable by implicit MongoQuery " in {
-      import BasicSerializers._
       import MongoQueries._
 
-      crud.searchFirst[Student]("{name: '%s'}" where("Alfredo")).get must beEqualTo(student)
+      crud.searchFirst[Student]("{name: %s}" param("Alfredo")).get must beEqualTo(student)
 
     }
   }
