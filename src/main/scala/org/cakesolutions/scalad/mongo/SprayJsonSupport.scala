@@ -6,7 +6,8 @@ import org.bson.types._
 import java.util.{Date, UUID}
 import java.text.{ParseException, SimpleDateFormat}
 import java.net.URI
-import com.typesafe.config.ConfigFactory
+import scala.Some
+import util.JSON
 
 
 /** Convenience that allows a collection to be setup as using Spray JSON marshalling */
@@ -18,6 +19,57 @@ trait SprayJsonSerializers {
   implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
 }
 
+object BasicSerializers extends BasicFormats {
+  implicit val StringMongoSerializer = new SprayJsonSerialisation[String]
+  implicit val LongMongoSerializer = new SprayJsonSerialisation[Long]
+  implicit val BooleanMongoSerializer = new SprayJsonSerialisation[Boolean]
+  implicit val DoubleMongoSerializer = new SprayJsonSerialisation[Double]
+}
+
+/** Pimp that gives an implicit conversion from String to DBObject
+  * using the implicit serialisers.
+  *
+  * (Might break down for complicated objects – so test your queries thoroughly).
+  *
+  * You may wish to import
+  * [[org.cakesolutions.scalad.mongo.BasicSerializers]]
+  * to be able to perform trivial serialisations.
+  *
+  * NOTE: String queries must be surrounded with quotes.
+  */
+object MongoQueries {
+  import scala.language.implicitConversions
+
+  private def stringToMongo(query: String) = JSON.parse(query).asInstanceOf[DBObject]
+
+  implicit class MongoString(query: String) {
+
+    def toBson = stringToMongo(query)
+
+    private def s[T](q: T)(implicit qs: MongoSerializer[T]) = qs.serialize(q)
+
+    // we have to do each parameter list explicitly, without * syntax,
+    // because the compiler needs to be able to get each serialiser.
+    def where[T](q1: T)(implicit q1s: MongoSerializer[T]) = {
+      stringToMongo(query format(s(q1)))
+    }
+
+    def where[T, U](q1: T, q2: U)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U]) = {
+      stringToMongo(query format(s(q1), s(q2)))
+    }
+
+    def where[T, U, V](q1: T, q2: U, q3: V)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U], q3s: MongoSerializer[V]) = {
+      stringToMongo(query format(s(q1), s(q2), s(q3)))
+    }
+
+    def where[T, U, V, W](q1: T, q2: U, q3: V, q4: W)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U], q3s: MongoSerializer[V], q4s: MongoSerializer[W]) = {
+      stringToMongo(query format(s(q1), s(q2), s(q3), s(q4)))
+    }
+  }
+
+}
+
+
 /** Uses `spray-json` to serialise/deserialise database objects
   * directly from `JsObject` -> `DBObject`.
   *
@@ -26,7 +78,7 @@ trait SprayJsonSerializers {
   */
 class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
 
-  import SprayJsonImplicits.{js2db, obj2js}
+  import SprayJsonConvertors._
 
   override def serialize(entity: T): Object = {
     js2db(formatter.write(entity))
@@ -39,34 +91,110 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] {
   def formatter = implicitly[JsonFormat[T]]
 }
 
-object SprayJsonImplicits extends SprayJsonImplicits {
 
-  import scala.language.implicitConversions
+/** Allows special types to be marshalled into a meta JSON language
+  * which allows ScalaD Mongo serialisation to convert into the correct
+  * BSON representation for database persistence.
+  */
+trait BsonMarshalling[T] extends RootJsonFormat[T] {
 
-  // SprayJsonToDBObject will fail for trivial serialisations (e.g. a single `JsString`)
-  implicit val SprayJsonToDBObject = (jsValue: JsValue) => js2db(jsValue).asInstanceOf[DBObject]
-  implicit val DBObjectToSprayJson = (obj: Object) => obj2js(obj)
-  implicit val SprayStringToDBObject = (json: String) => SprayJsonToDBObject(JsonParser(json))
+  val key: String
+  def writeString(obj: T): String
+  def readString(value: String): T
+
+  def write(obj: T) = JsObject(key -> JsString(writeString(obj)))
+
+  def read(json: JsValue) = json match {
+    case JsObject(map) => map.get(key) match {
+      case Some(JsString(text)) => readString(text)
+      case x => deserializationError("Expected %s, got %s" format(key, x))
+    }
+    case x => deserializationError("Expected JsObject, got %s" format(x))
+  }
+
 }
 
-class SprayJsonImplicits extends UuidChecker with IsoDateChecker with J2SELogging {
+trait UuidMarshalling {
 
-  private val evilHack = ConfigFactory.load().getBoolean("scalad.evilHack")
+  implicit object UuidJsonFormat extends BsonMarshalling[UUID] with UuidChecker {
+
+    override val key = "$uuid"
+    override def writeString(obj: UUID) = obj.toString
+    override def readString(value: String) = parseUuidString(value) match {
+      case None => deserializationError("Expected UUID format, got %s" format(value))
+      case Some(uuid) => uuid
+    }
+  }
+
+}
+
+trait DateMarshalling {
+
+  implicit object DateJsonFormat extends BsonMarshalling[Date] with IsoDateChecker {
+
+    override val key = "$date"
+    override def writeString(obj: Date) = dateToIsoString(obj)
+    override def readString(value: String) = parseIsoDateString(value) match {
+      case None => deserializationError("Expected ISO Date format, got %s" format(value))
+      case Some(date) => date
+    }
+  }
+}
+
+/** [[scala.math.BigDecimal]] wrapper that is marshalled to `String`
+  * and can therefore be persisted into MongoDB */
+case class StringBigDecimal(value: BigDecimal)
+
+object StringBigDecimal {
+  def apply(value: String) = new StringBigDecimal(BigDecimal(value))
+}
+
+/** [[scala.math.BigInt]] wrapper that is marshalled to `String`
+  * and can therefore be persisted into MongoDB */
+case class StringBigInt(value: BigInt)
+
+object StringBigInt {
+  def apply(value: String) = new StringBigInt(BigInt(value))
+}
+
+/** Alternative to [[spray.json.BasicFormats]] `JsNumber` marshalling. */
+trait BigNumberMarshalling {
+
+  implicit object StringBigDecimalJsonFormat extends BsonMarshalling[StringBigDecimal] {
+
+    override val key = "StringBigDecimal"
+    override def writeString(obj: StringBigDecimal) = obj.value.toString()
+    override def readString(value: String) = try StringBigDecimal(value)
+      catch {
+        case e: NumberFormatException =>
+          deserializationError("Expected StringBigDecimal format, got %s" format(value))
+      }
+  }
+
+  implicit object StringBigIntJsonFormat extends BsonMarshalling[StringBigInt] {
+
+    override val key = "StringBigInt"
+    override def writeString(obj: StringBigInt) = obj.value.toString()
+    override def readString(value: String) = try StringBigInt(value)
+    catch {
+      case e: NumberFormatException =>
+        deserializationError("Expected StringBigInt format, got %s" format(value))
+    }
+  }
+
+}
+
+
+object SprayJsonConvertors extends SprayJsonConvertors
+
+class SprayJsonConvertors extends UuidChecker with J2SELogging
+  with UuidMarshalling with DateMarshalling {
 
   def js2db(jsValue: JsValue): Object = {
     import scala.collection.convert.WrapAsJava._
 
     jsValue match {
-      case JsString(s) =>
-        if (evilHack) {
-          parseUuidString(s) match {
-            case None => parseIsoDateString(s) match {
-              case None => s
-              case Some(date) => date
-            }
-            case Some(uuid) => uuid
-          }
-        } else s
+      case JsString(s) => s
       case JsNumber(n) =>
         // MongoDB doesn't support arbitrary precision numbers
         if (n.isValidLong)
@@ -84,7 +212,11 @@ class SprayJsonImplicits extends UuidChecker with IsoDateChecker with J2SELoggin
         val list = new BasicDBList()
         list.addAll(a.elements.map(f => js2db(f)))
         list
-      case o: JsObject => new BasicDBObject(o.fields.map(f => (f._1, js2db(f._2))).toMap)
+      case o: JsObject =>
+        val fields = o.fields
+        if (fields.contains("$date")) o.convertTo[Date]
+        else if (fields.contains("$uuid")) o.convertTo[UUID]
+        else new BasicDBObject(fields.map(f => (f._1, js2db(f._2))).toMap)
     }
   }
 
@@ -107,12 +239,10 @@ class SprayJsonImplicits extends UuidChecker with IsoDateChecker with J2SELoggin
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
       case d: java.lang.Double => JsNumber(d)
+      case date: java.util.Date => date.toJson
+      case uuid: java.util.UUID => uuid.toJson
       case null => JsNull
       case unsupported =>
-        if (evilHack) unsupported match {
-          case uuid: java.util.UUID => return JsString(uuid.toString)
-          case date: java.util.Date => return JsString(dateToIsoString(date))
-        }
         throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
     }
   }
@@ -130,63 +260,21 @@ trait UuidChecker {
 
 trait IsoDateChecker {
   private val localIsoDateFormatter = new ThreadLocal[SimpleDateFormat] {
-    override def initialValue() = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+    override def initialValue() = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
   }
 
   def dateToIsoString(date: Date) = localIsoDateFormatter.get().format(date)
 
   def parseIsoDateString(date: String): Option[Date] =
-    if (date.length != 24) None
+    if (date.length != 28) None
     else try Some(localIsoDateFormatter.get().parse(date))
     catch {
-      case p: ParseException => None
+      case p: ParseException =>
+        println(date + " " + p)
+        None
     }
 }
 
-
-// might move upstream: https://github.com/spray/spray-json/issues/25
-trait UuidMarshalling {
-
-  implicit object UuidJsonFormat extends RootJsonFormat[UUID] {
-    def write(x: UUID) = JsString(x toString())
-
-    def read(value: JsValue) = value match {
-      case JsString(x) => UUID.fromString(x)
-      case x => deserializationError("Expected UUID as JsString, but got " + x)
-    }
-  }
-}
-
-trait JavaDateStringMarshalling {
-
-  implicit object JavaDateStringJsonFormat extends RootJsonFormat[Date] with IsoDateChecker {
-
-    def write(obj: Date) = JsString(dateToIsoString(obj))
-
-    def read(json: JsValue) = json match {
-      case JsString(text) =>
-        try parseIsoDateString(text) match {
-          case None => deserializationError("Unexpected DateFormat: " + text)
-          case Some(date) => date
-        }
-      case x => deserializationError("Expected Date as JsNumber, but got " + x)
-    }
-  }
-}
-
-
-trait JavaDateLongMarshalling {
-
-  implicit protected object DateJsonFormat extends RootJsonFormat[Date] {
-    def write(x: Date) = JsNumber(x.getTime)
-
-    def read(value: JsValue) = value match {
-      case JsNumber(x) => new Date(x.toLong)
-      case x => deserializationError("Expected Date as JsNumber, but got " + x)
-    }
-  }
-
-}
 
 
 trait UriMarshalling {
