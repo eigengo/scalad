@@ -19,23 +19,12 @@ trait SprayJsonSerializers {
   implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
 }
 
-object BasicSerializers extends BasicFormats {
-  implicit val StringMongoSerializer = new SprayJsonSerialisation[String]
-  implicit val LongMongoSerializer = new SprayJsonSerialisation[Long]
-  implicit val BooleanMongoSerializer = new SprayJsonSerialisation[Boolean]
-  implicit val DoubleMongoSerializer = new SprayJsonSerialisation[Double]
-}
 
 /** Pimp that gives an implicit conversion from String to DBObject
   * using the implicit serialisers.
   *
-  * (Might break down for complicated objects – so test your queries thoroughly).
-  *
-  * You may wish to import
-  * [[org.cakesolutions.scalad.mongo.BasicSerializers]]
-  * to be able to perform trivial serialisations.
-  *
-  * NOTE: String queries must be surrounded with quotes.
+  * (Will break down if the JSON form isn't the same as the BSON form,
+  *  so test your queries thoroughly – especially Date / UUID / BigDecimal).
   */
 object MongoQueries {
   import scala.language.implicitConversions
@@ -46,24 +35,24 @@ object MongoQueries {
 
     def toBson = stringToMongo(query)
 
-    private def s[T](q: T)(implicit qs: MongoSerializer[T]) = qs.serialize(q)
-
     // we have to do each parameter list explicitly, without * syntax,
     // because the compiler needs to be able to get each serialiser.
-    def where[T](q1: T)(implicit q1s: MongoSerializer[T]) = {
-      stringToMongo(query format(s(q1)))
+    def param[T](q1: T)(implicit q1s: JsonWriter[T]) = {
+      stringToMongo(query format(q1.toJson))
     }
 
-    def where[T, U](q1: T, q2: U)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U]) = {
-      stringToMongo(query format(s(q1), s(q2)))
+    def params[T, U](q1: T, q2: U)(implicit q1s: JsonWriter[T], q2s: JsonWriter[U]) = {
+      stringToMongo(query format(q1.toJson, q2.toJson))
     }
 
-    def where[T, U, V](q1: T, q2: U, q3: V)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U], q3s: MongoSerializer[V]) = {
-      stringToMongo(query format(s(q1), s(q2), s(q3)))
+    def params[T, U, V](q1: T, q2: U, q3: V)
+                      (implicit q1s: JsonWriter[T], q2s: JsonWriter[U], q3s: JsonWriter[V]) = {
+      stringToMongo(query format(q1.toJson, q2.toJson, q3.toJson))
     }
 
-    def where[T, U, V, W](q1: T, q2: U, q3: V, q4: W)(implicit q1s: MongoSerializer[T], q2s: MongoSerializer[U], q3s: MongoSerializer[V], q4s: MongoSerializer[W]) = {
-      stringToMongo(query format(s(q1), s(q2), s(q3), s(q4)))
+    def params[T, U, V, W](q1: T, q2: U, q3: V, q4: W)
+                         (implicit q1s: JsonWriter[T], q2s: JsonWriter[U], q3s: JsonWriter[V], q4s: JsonWriter[W]) = {
+      stringToMongo(query format(q1.toJson, q2.toJson, q3.toJson, q4.toJson))
     }
   }
 
