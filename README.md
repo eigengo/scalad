@@ -1,4 +1,4 @@
-# ScalaD
+ok# ScalaD
 
 Reuse [Spray JSON](http://github.com/spray/spray-json/) formatters as serialisers for [MongoDB](http://www.mongodb.org) persistence in Scala, and get access to a useful CRUD for performing simple searches.
 
@@ -17,7 +17,7 @@ crud.create(entity)
 val update = entity.copy(name = "Bar")
 crud.updateFirst(update)
 
-val morePopular = crud.searchAll("""{"count": {$gte: %s}}""" param(update.count))
+val morePopular = crud.searchAll("""{"count": {"$gte"": %s}}""" param(update.count))
 ```
 
 However, anybody using this library is strongly encouraged to read the [MongoDB Documentation](http://docs.mongodb.org/manual/) as it is often necessary to get close to the raw queries to understand what is happening.
@@ -57,7 +57,7 @@ This setup will enable the functionality to use `crud.create` and `crud.search*`
 import MongoQueries._
 
 crud.searchFirst[MyCaseClass]("""{"name": %s}""" param("Foo"))
-crud.searchAll[MyCaseClass]("""{"name": %s, "count": {$lte: %s}}""" params("Foo", 1000))
+crud.searchAll[MyCaseClass]("""{"name": %s, "count": {"$lte": %s}}""" params("Foo", 1000))
 crud.searchAll[MyCaseClass]("{}" toBson) // finds everything in the collection
 ```
 
