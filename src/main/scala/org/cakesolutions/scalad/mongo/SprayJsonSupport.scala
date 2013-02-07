@@ -20,18 +20,22 @@ trait SprayJsonSerializers {
 }
 
 
-/** Pimp that gives an implicit conversion from String to DBObject
+/** Pimp and implicits that gives conversion from String/JsValue to DBObject
   * using the implicit serialisers.
   *
-  * (Will break down if the JSON form isn't the same as the BSON form,
-  *  so test your queries thoroughly – especially Date / UUID / BigDecimal).
+  * Note: Spray JSON is used to do the parsing, so JSON has to be strictly valid.
+  * (Mongo's interpretation of JSON is a little loose).
   */
-object MongoQueries {
+object MongoQueries extends MongoQueries
+
+trait MongoQueries {
   import scala.language.implicitConversions
 
-  private def stringToMongo(query: String) = JSON.parse(query).asInstanceOf[DBObject]
+  implicit def SprayJsonToDBObject(json: JsValue) = SprayJsonConvertors.js2db(json).asInstanceOf[DBObject]
 
   implicit class MongoString(query: String) {
+
+    private def stringToMongo(query: String) = SprayJsonToDBObject(JsonParser(query))
 
     def toBson = stringToMongo(query)
 
