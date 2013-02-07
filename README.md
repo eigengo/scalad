@@ -17,7 +17,7 @@ crud.create(entity)
 val update = entity.copy(name = "Bar")
 crud.updateFirst(update)
 
-val morePopular = crud.searchAll("""{count: {$gte: %s}}""" param(update.count))
+val morePopular = crud.searchAll("""{"count": {$gte: %s}}""" param(update.count))
 ```
 
 However, anybody using this library is strongly encouraged to read the [MongoDB Documentation](http://docs.mongodb.org/manual/) as it is often necessary to get close to the raw queries to understand what is happening.
@@ -44,8 +44,8 @@ val db = new Mongo(...)
 // and to add some indexes and uniqueness constraints
 implicit val MyCaseClassProvider = new IndexedCollectionSprayJson[MyCaseClass] {
     override def getCollection = db.getCollection("entities")
-    override def uniqueFields = "{'id': 1}" :: Nil // MongoDB syntax
-    override def indexFields = "{'name': -1}" :: Nil // reverse order index
+    override def uniqueFields = """{"id": 1}""" :: Nil // MongoDB syntax
+    override def indexFields = """{"name": -1}""" :: Nil // reverse order index
 }
 ```
 
@@ -56,8 +56,8 @@ This setup will enable the functionality to use `crud.create` and `crud.search*`
 ```scala
 import MongoQueries._
 
-crud.searchFirst[MyCaseClass]("{name: %s}" param("Foo"))
-crud.searchAll[MyCaseClass]("{name: %s, count: {$lte: %s}}" params("Foo", 1000))
+crud.searchFirst[MyCaseClass]("""{"name": %s}""" param("Foo"))
+crud.searchAll[MyCaseClass]("""{"name": %s, "count": {$lte: %s}}""" params("Foo", 1000))
 crud.searchAll[MyCaseClass]("{}" toBson) // finds everything in the collection
 ```
 
@@ -97,7 +97,7 @@ More complicated composite identity keys can be defined using `MongoQuery` and f
 import MongoQueries._
 
 implicit val CompositeIdentity = new IdentityQueryBuilder[MyOtherCaseClass] {
-  def createIdQuery(entity: MyOtherCaseClass) = "{id: %s, name: %s}" params(entity.id, entity.name)
+  def createIdQuery(entity: MyOtherCaseClass) = """{"id": %s, "name": %s}""" params(entity.id, entity.name)
 }
 ```
 
@@ -106,8 +106,8 @@ which should be accompanied with a composite uniqueness constraint on the collec
 ```scala
 implicit val MyOtherCaseClassProvider = new IndexedCollectionSprayJson[MyOtherCaseClass] {
     override def getCollection = db.getCollection("other")
-    override def uniqueFields = "{'id': 1, 'name': 1}" :: Nil
-    override def indexFields = "{'id': 1}" :: "{'name': 1}" :: Nil // individual indexes still needed for key based lookups
+    override def uniqueFields = """{"id": 1, "name": 1}""" :: Nil
+    override def indexFields = """{"id": 1}""" :: """{"name": 1}""" :: Nil // individual indexes still needed for key based lookups
 }
 ```
 
