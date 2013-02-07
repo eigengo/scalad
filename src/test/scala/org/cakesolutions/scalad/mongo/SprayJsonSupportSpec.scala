@@ -26,7 +26,7 @@ case class Student(id: Int,
 
 class SprayJsonSupportTest extends Specification
   with DefaultJsonProtocol
-  with MongoCrudTestAccess with UuidMarshalling with DateMarshalling with BigNumberMarshalling {
+  with MongoCrudTestAccess with UuidMarshalling with DateMarshalling with BigNumberMarshalling with MongoQueries {
 
   implicit val JsObjectEntityFormatter = jsonFormat1(JsValueEntity)
   implicit val DoubleEntityFormatter = jsonFormat1(DoubleEntity)
@@ -310,13 +310,10 @@ class SprayJsonSupportTest extends Specification
     }
 
     "ensure a Student is searchable by JSON query" in {
-      import MongoQueries._
       crud.searchFirst[Student](jsonQuery toBson).get must beEqualTo(student)
     }
 
     "ensure a Student is searchable by nested JSON query" in {
-      import MongoQueries._
-
       //Here I had to specify the WHOLE hierarchy, otherwise simply with
       //{"address": {"number": 91}}, mongo is not able to retrieve any
       //result
@@ -324,10 +321,7 @@ class SprayJsonSupportTest extends Specification
     }
 
     "ensure a Student is searchable by implicit MongoQuery " in {
-      import MongoQueries._
-
-      crud.searchFirst[Student]("{name: %s}" param("Alfredo")).get must beEqualTo(student)
-
+      crud.searchFirst[Student]("""{"name": %s}""" param("Alfredo")).get must beEqualTo(student)
     }
   }
 }
