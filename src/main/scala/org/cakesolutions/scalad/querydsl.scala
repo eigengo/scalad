@@ -38,12 +38,9 @@ trait RestrictionOps {
 }
 
 /**
- * Translates some ``Restriction`` into its native representation. This will differ database-by-database
+ * Contains functions to simplify restrictions
  */
-trait NativeRestrictions {
-  type NativeRestriction
-
-  import language.implicitConversions
+trait RestrictionSimplification {
 
   private def simplifyConjunction(conjunction: ConjunctionRestriction): Restriction = conjunction match {
     case ConjunctionRestriction(lhs, rhs) if lhs == rhs    => lhs
@@ -69,16 +66,11 @@ trait NativeRestrictions {
       if (simplerLhs != lhs || simplerRhs != rhs) simplify(DisjunctionRestriction(simplerLhs, simplerRhs)) else disjunction
   }
 
-  private def simplify(restriction: Restriction): Restriction = restriction match {
+  final def simplify(restriction: Restriction): Restriction = restriction match {
     case c: ConjunctionRestriction => simplifyConjunction(c)
     case d: DisjunctionRestriction => simplifyDisjunction(d)
     case _                         => restriction
   }
-
-  def convertNative(restriction: Restriction): NativeRestriction
-
-  implicit final def doConvertNative(restriction: Restriction): NativeRestriction =
-    convertNative(simplify(restriction))
 
 }
 
@@ -90,6 +82,15 @@ trait NativeRestrictions {
  */
 trait StringRestrictionsPaths {
   type RestrictionPath = String
+}
+
+trait NativeRestrictions extends RestrictionSimplification {
+  type NativeRestriction
+
+  implicit final def doConvertToNative(restriction: Restriction) = convertToNative(simplify(restriction))
+
+  def convertToNative(restriction: Restriction): NativeRestriction
+
 }
 
 /**
@@ -111,6 +112,14 @@ trait Restrictions {
 
 }
 
+trait NativeRestrictionsMarshaller[A] {
+
+  type NativeRestrictionValue
+
+  def marshal(value: A): NativeRestrictionValue
+
+}
+
 /**
  * Begins the construction of the restrictions so that you can construct the entire query tree
  *
@@ -119,7 +128,6 @@ trait Restrictions {
  */
 class RestrictionBuilder[Path](path: Path) {
 
-
   /**
    * Property is equal to the given value
    *
@@ -127,7 +135,7 @@ class RestrictionBuilder[Path](path: Path) {
    * @tparam A the type of the value
    * @return the == restriction
    */
-  def equalTo[A](value: A) = EqualsRestriction(path, value)
+  def equalTo[A](value: A)(implicit marshaller: NativeRestrictionsMarshaller[A]) = EqualsRestriction(path, marshaller.marshal(value))
 
   /**
    * Property is not equal to the given value
@@ -136,10 +144,8 @@ class RestrictionBuilder[Path](path: Path) {
    * @tparam A the type of the value
    * @return the != restriction
    */
-  def notEqualTo[A](value: A) = NotEqualsRestriction(path, value)
+  def notEqualTo[A](value: A)(implicit marshaller: NativeRestrictionsMarshaller[A]) = NotEqualsRestriction(path, marshaller.marshal(value))
 
-  def lessThan[A : Ordering](value: A) = OrdRestriction(path, '<, value)
-
-  def greaterThan[A : Ordering](value: A) = OrdRestriction(path, '>, value)
+  // def lessThan[A : Ordering](value: A) = OrdRestriction(path, '<, nativeValue(value))
 
 }
