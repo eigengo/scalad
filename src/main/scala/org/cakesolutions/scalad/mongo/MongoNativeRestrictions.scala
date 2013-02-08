@@ -7,7 +7,7 @@ import com.mongodb.{BasicDBObjectBuilder, DBObject}
 /**
  * Native restrictions for JsObject and MongoDB
  */
-trait SprayJsonNativeRestrictions extends NativeRestrictions with SprayJsonNativeRestrictionMarshallers {
+trait MongoJsonNativeRestrictions extends NativeRestrictions with MongoNativeRestrictionMarshallers {
   type NativeRestriction = DBObject
 
   def convertToNative(restriction: Restriction) = {
@@ -28,7 +28,7 @@ trait SprayJsonNativeRestrictions extends NativeRestrictions with SprayJsonNativ
 
 }
 
-trait SprayJsonNativeRestrictionMarshallers extends SprayJsonSerializers {
+private[mongo] trait MongoNativeRestrictionMarshallers extends SprayJsonSerializers {
 
   implicit def getNativeRestrictionsMarshaller[A : MongoSerializer]: NativeRestrictionsMarshaller[A] = new NativeRestrictionsMarshaller[A] {
     val serializer = implicitly[MongoSerializer[A]]
