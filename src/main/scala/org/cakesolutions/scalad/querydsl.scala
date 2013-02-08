@@ -119,6 +119,7 @@ trait Restrictions {
  */
 class RestrictionBuilder[Path](path: Path) {
 
+
   /**
    * Property is equal to the given value
    *

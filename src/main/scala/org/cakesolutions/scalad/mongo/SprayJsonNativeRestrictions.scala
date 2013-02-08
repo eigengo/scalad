@@ -1,7 +1,7 @@
 package org.cakesolutions.scalad.mongo
 
 import spray.json.{JsString, JsObject}
-import org.cakesolutions.scalad.{NativeRestrictions, Restriction}
+import org.cakesolutions.scalad.{EqualsRestriction, NativeRestrictions, Restriction}
 
 /**
  * Native restrictions for JsObject and MongoDB
@@ -9,5 +9,5 @@ import org.cakesolutions.scalad.{NativeRestrictions, Restriction}
 trait SprayJsonNativeRestrictions extends NativeRestrictions {
   type NativeRestriction = JsObject
 
-  def toNative(restriction: Restriction) = JsObject(("foo", JsString("bar")))
+  def toNative(restriction: Restriction) = JsObject(("x", JsString("x")))
 }
