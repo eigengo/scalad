@@ -168,13 +168,7 @@ We provide JSON marshallers for `UuidMarshalling` and `DateMarshalling` which cr
 the serialisation layer will ensure that these are saved as `BinData` and `DateFormat` accordingly.
 
 
-If you want to use arbitrary precision numbers, we provide case classes (and Spray JSON marshallers) called `StringBigInt` and `StringBigDecimal` which marshall to JSON that looks like
+If you want to use arbitrary precision numbers, we provide case classes (and Spray JSON marshallers) called `StringBigInt` and `StringBigDecimal` which marshall to `String`.
 
-```
-{"StringBigInt": "10000000000000000000000000001"}
-{"StringBigDecimal": "100000000000000.00000000000001"}
-```
-
-which can be understood by both clients of endpoints and do not lose their precision when saved in MongoDB.
 
 Be warned that although Spray JSON will correctly marshall raw `BigInt`s and `BigDecimal`s, MongoDB will silently drop the precision (ScalaD will detect this and create a log for every object that loses precision, so hopefully this is caught at development time).

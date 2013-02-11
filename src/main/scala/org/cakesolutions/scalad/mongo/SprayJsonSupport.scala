@@ -163,25 +163,22 @@ object BigNumberMarshalling {
 /** Alternative to [[spray.json.BasicFormats]] `JsNumber` marshalling. */
 trait BigNumberMarshalling {
 
-  implicit object StringBigDecimalJsonFormat extends BsonMarshalling[StringBigDecimal] {
+  implicit object StringBigDecimalJsonFormat extends RootJsonFormat[StringBigDecimal] {
+    def write(obj: StringBigDecimal) = JsString(obj.value.toString())
 
-    override val key = "StringBigDecimal"
-    override def writeString(obj: StringBigDecimal) = obj.value.toString()
-    override def readString(value: String) = try StringBigDecimal(value)
-      catch {
-        case e: NumberFormatException =>
-          deserializationError("Expected StringBigDecimal format, got %s" format(value))
-      }
+    def read(json: JsValue) = json match {
+      case JsString(value) => StringBigDecimal(value)
+      case _ => deserializationError("Expected String for StringBigDecimal")
+    }
   }
 
-  implicit object StringBigIntJsonFormat extends BsonMarshalling[StringBigInt] {
+  implicit object StringBigIntJsonFormat extends RootJsonFormat[StringBigInt] {
 
-    override val key = "StringBigInt"
-    override def writeString(obj: StringBigInt) = obj.value.toString()
-    override def readString(value: String) = try StringBigInt(value)
-    catch {
-      case e: NumberFormatException =>
-        deserializationError("Expected StringBigInt format, got %s" format(value))
+    def write(obj: StringBigInt) = JsString(obj.value.toString())
+
+    def read(json: JsValue) = json match {
+      case JsString(value) => StringBigInt(value)
+      case _ => deserializationError("Expected String for StringBigInt")
     }
   }
 

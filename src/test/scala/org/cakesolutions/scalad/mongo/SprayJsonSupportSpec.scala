@@ -153,32 +153,44 @@ class SprayJsonSupportTest extends Specification
         mustDeserialize(new Date(1360000295479L), json)
     }
 
+//    "be able to serialise a StringBigDecimal" in {
+//      val string = "100000000000000.00000000000001"
+//      val original = StringBigDecimal(string)
+//      val expected:DBObject = new BasicDBObject("StringBigDecimal", string)
+//      mustSerialize(original, expected)
+//    }
+//
+//    "be able to deserialise a StringBigDecimal" in {
+//      val string = "100000000000000.00000000000001"
+//      val original = StringBigDecimal(string)
+//      val expected = new BasicDBObject("StringBigDecimal", string)
+//      mustDeserialize(expected, original)
+//    }
+//
+//    "be able to serialise a StringBigInt" in {
+//      val string = "10000000000000000000000000001"
+//      val original = StringBigInt(string)
+//      val expected:DBObject = new BasicDBObject("StringBigInt", string)
+//      mustSerialize(original, expected)
+//    }
+//
+//    "be able to deserialise a StringBigInt" in {
+//      val string = "10000000000000000000000000001"
+//      val original = StringBigInt(string)
+//      val expected = new BasicDBObject("StringBigInt", string)
+//      mustDeserialize(expected, original)
+//    }
+
     "be able to serialise a StringBigDecimal" in {
       val string = "100000000000000.00000000000001"
       val original = StringBigDecimal(string)
-      val expected:DBObject = new BasicDBObject("StringBigDecimal", string)
-      mustSerialize(original, expected)
-    }
-
-    "be able to deserialise a StringBigDecimal" in {
-      val string = "100000000000000.00000000000001"
-      val original = StringBigDecimal(string)
-      val expected = new BasicDBObject("StringBigDecimal", string)
-      mustDeserialize(expected, original)
+      mustSerialize(original, string)
     }
 
     "be able to serialise a StringBigInt" in {
       val string = "10000000000000000000000000001"
       val original = StringBigInt(string)
-      val expected:DBObject = new BasicDBObject("StringBigInt", string)
-      mustSerialize(original, expected)
-    }
-
-    "be able to deserialise a StringBigInt" in {
-      val string = "10000000000000000000000000001"
-      val original = StringBigInt(string)
-      val expected = new BasicDBObject("StringBigInt", string)
-      mustDeserialize(expected, original)
+      mustSerialize(original, string)
     }
 
     "be able to serialize a JsNull" in {
