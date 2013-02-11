@@ -134,13 +134,6 @@ trait DateMarshalling {
   }
 }
 
-object StringBigFormats {
-  implicit def StringBigDecimalToBigDecimal(value: StringBigDecimal) = value.value
-  implicit def StringBigIntBigDecimal(value: StringBigInt) = value.value
-  implicit def StringToStringBigDecimal(value: String) = StringBigDecimal(value)
-  implicit def StringToStringBigInt(value: String) = StringBigInt(value)
-}
-
 /** [[scala.math.BigDecimal]] wrapper that is marshalled to `String`
   * and can therefore be persisted into MongoDB */
 final case class StringBigDecimal(value: BigDecimal)
@@ -155,6 +148,16 @@ final case class StringBigInt(value: BigInt)
 
 object StringBigInt {
   def apply(value: String) = new StringBigInt(BigInt(value))
+}
+
+/** Convenient implicit conversions */
+object BigNumberMarshalling {
+  import language.implicitConversions
+
+  implicit def StringBigDecimalToBigDecimal(value: StringBigDecimal) = value.value
+  implicit def StringBigIntBigDecimal(value: StringBigInt) = value.value
+  implicit def StringToStringBigDecimal(value: String) = StringBigDecimal(value)
+  implicit def StringToStringBigInt(value: String) = StringBigInt(value)
 }
 
 /** Alternative to [[spray.json.BasicFormats]] `JsNumber` marshalling. */
