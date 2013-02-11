@@ -158,6 +158,10 @@ object BigNumberMarshalling {
   implicit def StringBigIntBigDecimal(value: StringBigInt) = value.value
   implicit def StringToStringBigDecimal(value: String) = StringBigDecimal(value)
   implicit def StringToStringBigInt(value: String) = StringBigInt(value)
+  implicit def IntToStringBigDecimal(value: Int) = StringBigDecimal(BigDecimal(value))
+  implicit def IntToStringBigInt(value: Int) = StringBigInt(BigInt(value))
+  implicit def BigDecimalToStringBigDecimal(value: BigDecimal) = StringBigDecimal(value)
+  implicit def BigIntToStringBigInt(value: BigInt) = StringBigInt(value)
 }
 
 /** Alternative to [[spray.json.BasicFormats]] `JsNumber` marshalling. */
