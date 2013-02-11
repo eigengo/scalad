@@ -134,9 +134,16 @@ trait DateMarshalling {
   }
 }
 
+object StringBigFormats {
+  implicit def StringBigDecimalToBigDecimal(value: StringBigDecimal) = value.value
+  implicit def StringBigIntBigDecimal(value: StringBigInt) = value.value
+  implicit def StringToStringBigDecimal(value: String) = StringBigDecimal(value)
+  implicit def StringToStringBigInt(value: String) = StringBigInt(value)
+}
+
 /** [[scala.math.BigDecimal]] wrapper that is marshalled to `String`
   * and can therefore be persisted into MongoDB */
-case class StringBigDecimal(value: BigDecimal)
+final case class StringBigDecimal(value: BigDecimal)
 
 object StringBigDecimal {
   def apply(value: String) = new StringBigDecimal(BigDecimal(value))
@@ -144,7 +151,7 @@ object StringBigDecimal {
 
 /** [[scala.math.BigInt]] wrapper that is marshalled to `String`
   * and can therefore be persisted into MongoDB */
-case class StringBigInt(value: BigInt)
+final case class StringBigInt(value: BigInt)
 
 object StringBigInt {
   def apply(value: String) = new StringBigInt(BigInt(value))
