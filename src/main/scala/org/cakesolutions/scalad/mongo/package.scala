@@ -128,29 +128,6 @@ class StringFieldQuery[T](val field: String) extends FieldQueryBuilder[T, String
 /** Syntactic sugar for [[org.cakesolutions.scalad.mongo.FieldQueryBuilder]]. */
 class LongFieldQuery[T](val field: String) extends FieldQueryBuilder[T, Long]
 
-/** Conveniently mixes together two traits that are often seen together.
-  */
-trait IdentityField[T, K] extends FieldQueryBuilder[T, K] with FieldIdentityQueryBuilder[T, K]
-
-/** Solidifies [[org.cakesolutions.scalad.mongo.IdentityField]]
-  * for fields named `id`.
-  */
-trait IdField[T <: {def id : K}, K] {
-  import scala.language.reflectiveCalls
-
-  def id(entity: T) = entity.id
-
-  def field = "id"
-}
-
-/** Convenient mixin to provide
-  * [[org.cakesolutions.scalad.mongo.IdField]]
-  * support for simple field types.
-  */
-trait ImplicitIdField[T <: {def id : K}, K] {
-  implicit val IdField = new IdentityField[T, K] with IdField[T, K]
-}
-
 /** Provides a `read` query using serialised fields. */
 class SerializedFieldQueryBuilder[T, K](val field: String)
                                        (implicit serialiser: MongoSerializer[K])

@@ -5,13 +5,25 @@ import collection.mutable.ListBuffer
 import com.mongodb.{BasicDBObjectBuilder, DBObject}
 import util.Random
 
-trait HandcraftedPersistence extends MongoCrudTestAccess with ImplicitIdField[UuidEntity, UUID] {
+trait HandcraftedPersistence extends MongoCrudTestAccess {
 
   implicit val UuidEntityCollectionProvider = new IndexedCollectionProvider[UuidEntity] {
     override def getCollection = db.getCollection("uuid_hand")
 
     override def uniqueFields = "{'id': 1}" :: Nil
   }
+
+  implicit val UuidSerialisation = new MongoSerializer[UUID] {
+    def deserialize(dbObject: Object) = dbObject.asInstanceOf[UUID]
+
+    def serialize(entity: UUID) = entity
+  }
+
+  implicit val UuidEntityIdentity = new SerializedIdentityQueryBuilder[UuidEntity, UUID]("id"){
+    def id(entity: UuidEntity) = entity.id
+  }
+
+  implicit val UuidEntityQuery = new SerializedFieldQueryBuilder[UuidEntity, UUID]("id")
 
   implicit val DirectSerialisation = new MongoSerializer[UuidEntity] {
     def serialize(entity: UuidEntity) = {

@@ -13,10 +13,27 @@ import util.JSON
 /** Convenience that allows a collection to be setup as using Spray JSON marshalling */
 trait IndexedCollectionSprayJson[T] extends SprayJsonSerialisation[T] with IndexedCollectionProvider[T]
 
+/** Convenience that supports a simple ("id" field) type, using Spray JSON marshalling. */
+class SimpleSprayJsonCollection[T <: {def id : K}, K]
+  (db: DB, collection: String)
+  (implicit sprayT: JsonFormat[T], idSerialiser: SprayJsonSerialisation[K], sprayK: JsonFormat[K])
+  extends IndexedCollectionSprayJson[T]
+  with KeyQueryBuilder[T, K] with IdentityQueryBuilder[T] {
+
+  def getCollection = db.getCollection(collection)
+
+  override protected def uniqueFields = """{"id": 1}""" :: Nil
+
+  override def createKeyQuery(key: K): DBObject = new BasicDBObject("id", idSerialiser.serialize(key))
+
+  import language.reflectiveCalls
+  override def createIdQuery(entity: T): DBObject = new BasicDBObject("id", idSerialiser.serialize(entity.id))
+
+}
 
 /** Mixin to get an implicit SprayJsonSerialisation in scope. */
 trait SprayJsonSerializers {
-  implicit def sprayJsonSerializer[T: JsonFormat]: MongoSerializer[T] = new SprayJsonSerialisation[T]
+  implicit def sprayJsonSerializer[T: JsonFormat]: SprayJsonSerialisation[T] = new SprayJsonSerialisation[T]
 }
 
 
@@ -298,9 +315,7 @@ trait UriMarshalling {
  * Flattens the JSON representation of a case class that contains a single `value`
  * element from:
  *
- * {{{
  * {"value": "..."}
- * }}}
  *
  * to `"..."`
  */

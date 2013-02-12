@@ -20,26 +20,25 @@ trait MongoCrudTestAccess {
 
 case class LongEntity(id: Long, word: String)
 
-trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol with ImplicitIdField[LongEntity, Long] {
-
-  implicit val LongEntityCollectionProvider = new IndexedCollectionProvider[LongEntity] {
-    override def getCollection = db.getCollection("long")
-
-    override def uniqueFields = "{'id': 1}" :: Nil
-  }
+trait LongEntityPersistence extends MongoCrudTestAccess with DefaultJsonProtocol {
 
   // this would usually be defined elsewhere, e.g. the global Marshalling definitions
   implicit val LongEntityFormatter = jsonFormat2(LongEntity)
 
   // see UuidEntityPersistence for an alternative way to get serialisation
   implicit val LongEntitySerialiser = new SprayJsonSerialisation[LongEntity]
+  implicit val LongSerialiser = new SprayJsonSerialisation[Long]
+
+  implicit val LongEntityCollectionProvider = new SimpleSprayJsonCollection[LongEntity, Long](db, "long")
+
 
   // create a non-identity search
   // NOTE: implicitly chosen by type, so multiple fields of the same type
   // will mean the client has to explicitly list the search builders.
   // it is therefore best practice to create custom case classes for
   // all fields – it will also give additional type safety elsewhere.
-  implicit val ReadByWord = new StringFieldQuery[LongEntity]("word")
+  implicit val StringSerialiser = new SprayJsonSerialisation[String]
+  implicit val ReadByWord = new SerializedFieldQueryBuilder[LongEntity, String]("word")
 
 }
 
@@ -52,15 +51,9 @@ trait UuidEntityMarshalling extends DefaultJsonProtocol with UuidMarshalling {
   implicit val UuidEntityFormatter = jsonFormat2(UuidEntity)
 }
 
-trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalling with SprayJsonSerializers {
+trait UuidEntityPersistence extends MongoCrudTestAccess with UuidEntityMarshalling with UuidMarshalling with SprayJsonSerializers {
 
-  implicit val UuidEntityCollectionProvider = new IndexedCollectionProvider[UuidEntity] {
-    override def getCollection = db.getCollection("uuid")
-
-    override def uniqueFields = "{'id': 1}" :: Nil
-  }
-
-  implicit val UuidIdAsString = new IdentityField[UuidEntity, UUID] with IdField[UuidEntity, UUID]
+  implicit val UuidEntityCollectionProvider = new SimpleSprayJsonCollection[UuidEntity, UUID](db, "uuid")
 
   implicit val ReadBySimple = new SerializedFieldQueryBuilder[UuidEntity, SimpleEntity]("simple")
 }
@@ -122,7 +115,7 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
     }
 
     "be searchable with restrictions" in {
-      failure
+      todo
     }
 
     "be pageable in searches" in {
@@ -134,7 +127,7 @@ class MongoCrudTest extends Specification with LongEntityPersistence with UuidEn
 
     "be stress tested in situations that use the ConsumerIterable" in {
       // not implemented yet
-      failure
+      todo
     }
   }
 
