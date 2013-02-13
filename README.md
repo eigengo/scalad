@@ -32,6 +32,9 @@ In particular, anybody wishing to use the [Aggregation Framework](http://docs.mo
 Typically, a `case class` will be persisted to a MongoDB collection, we can do this with code like the following:
 
 ```scala
+// with UuidMarshalling
+// with SprayJsonSerializers
+
 case class MyCaseClass(id: UUID, name: String, count: Long)
 
 // set up the Spray JSON Marshaller
