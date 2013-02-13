@@ -1,5 +1,6 @@
 package org.cakesolutions.scalad.mongo
 
+import scala.collection._
 import com.mongodb._
 import java.util.logging.Logger
 
@@ -79,17 +80,37 @@ with MongoRead
 with MongoFind
 with MongoCreateOrUpdate
 
+// enables cross-instance concurrent DB indexing
+protected object IndexedCollectionProvider {
+
+  // synchronized access only
+  private val indexed = new mutable.WeakHashMap[DBCollection, Boolean]()
+
+  // true if the calling thread has privileged access to
+  // create indexes on the collection. Such callers should
+  // proceed immediately to build the indexes as it is possible
+  // that no other thread will be granted such privilege.
+  def privilegedIndexing(collection: DBCollection): Boolean = indexed.synchronized {
+    indexed.put(collection, true) match {
+      case Some(_) => false
+      case None => true
+    }
+  }
+}
+
 
 /** Easy way to add unique indexes to a Mongo collection. */
-trait IndexedCollectionProvider[T] extends CollectionProvider[T] {
+trait IndexedCollectionProvider[T] extends CollectionProvider[T] with J2SELogging {
 
   doIndex()
 
   def doIndex() {
     import Implicits._
-    // TODO: complain if the index is not created, e.g. syntax error in `String`
-    uniqueFields.foreach(field => getCollection.ensureIndex(field, null, true))
-    indexFields.foreach(field => getCollection.ensureIndex(field, null, false))
+    if (IndexedCollectionProvider.privilegedIndexing(getCollection)) {
+      log.info("Ensuring indexes exist on " + getCollection)
+      uniqueFields.foreach(field => getCollection.ensureIndex(field, null, true))
+      indexFields.foreach(field => getCollection.ensureIndex(field, null, false))
+    }
   }
 
   /** `String`s containing the JSON definition of the index to build. */
