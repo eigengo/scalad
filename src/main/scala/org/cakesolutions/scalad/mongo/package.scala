@@ -107,7 +107,7 @@ trait IndexedCollectionProvider[T] extends CollectionProvider[T] with J2SELoggin
   def doIndex() {
     import Implicits._
     if (IndexedCollectionProvider.privilegedIndexing(getCollection)) {
-      log.info("Ensuring indexes exist on " + getCollection)
+      log.config("Ensuring indexes exist on " + getCollection)
       uniqueFields.foreach(field => getCollection.ensureIndex(field, null, true))
       indexFields.foreach(field => getCollection.ensureIndex(field, null, false))
     }
