@@ -41,10 +41,9 @@ implicit val MyCaseClassFormat = jsonFormat3(MyCaseClass)
 val db = new Mongo(...)
 
 // tell ScalaD to associate a named collection to the case class
-// and to add some indexes and uniqueness constraints
-implicit val MyCaseClassProvider = new IndexedCollectionSprayJson[MyCaseClass] {
-    override def getCollection = db.getCollection("entities")
-    override def uniqueFields = """{"id": 1}""" :: Nil // MongoDB syntax
+// and to add some indexes. A uniqueness constraint on `id` is added
+// automatically by `SimpleSprayJsonCollection`
+implicit val MyCaseClassProvider = new SimpleSprayJsonCollection[MyCaseClass, UUID](db, "entities") {
     override def indexFields = """{"name": -1}""" :: Nil // reverse order index
 }
 ```
