@@ -46,6 +46,8 @@ val db = new Mongo(...)
 implicit val MyCaseClassProvider = new SimpleSprayJsonCollection[MyCaseClass, UUID](db, "entities") {
     override def indexFields = """{"name": -1}""" :: Nil // reverse order index
 }
+
+val crud = new MongoCrud
 ```
 
 This setup will enable the functionality to use `crud.create` and `crud.search*` on the collection.
