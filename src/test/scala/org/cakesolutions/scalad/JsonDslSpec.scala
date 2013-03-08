@@ -28,9 +28,15 @@ class JsonDslSpec extends Specification with JsonDsl with DefaultJsonProtocol {
     }
 
     "produce a valid JsValue out of a nested mapping" in {
-      val res = {"foo" :> {"bar" :> 10}}
+      val res = "foo" :> {"bar" :> 10}
       val expected = Map("foo" -> Map("bar" -> 10)).toJson
       res.compactPrint mustEqual(expected.compactPrint)
+    }
+
+    "allow monoid-like mappending of objects" in {
+      val a1 = {"foo" :> {"bar" :> 10}} <> {"age" :> 45}
+      val expected = a1.compactPrint
+      expected mustEqual("""{"foo":{"bar":10},"age":45}""")
     }
 
   }
