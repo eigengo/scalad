@@ -39,5 +39,18 @@ class JsonDslSpec extends Specification with JsonDsl with DefaultJsonProtocol {
       expected mustEqual("""{"foo":{"bar":10},"age":45}""")
     }
 
+    "correctly handle JSON arrays" in {
+      val a1 = $(1,2,3)
+      val expected = a1.compactPrint
+      expected mustEqual("[1,2,3]")
+    }
+
+    "Correctly handle combination of nested object and arrays" in {
+      val a1 = {"lorem" :> $("ipsum", "lorem ipsum")}
+      val a2 = {"foo" :> 10} ~ {"bar" :> a1}
+      val expected = a2.compactPrint
+      expected mustEqual("""{"foo":10,"bar":{"lorem":["ipsum","lorem ipsum"]}}""")
+    }
+
   }
 }
