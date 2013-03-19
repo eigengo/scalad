@@ -79,7 +79,7 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
       case uuid: java.util.UUID => uuid.toJson
       case null => JsNull
       case unsupported =>
-        throw new UnsupportedOperationException("Deserializing " + unsupported.getClass + ": " + unsupported)
+        throw new UnsupportedOperationException("Deserialising " + unsupported.getClass + ": " + unsupported)
     }
   }
 }

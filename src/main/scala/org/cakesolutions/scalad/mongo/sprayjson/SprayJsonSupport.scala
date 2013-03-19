@@ -34,8 +34,8 @@ class SimpleSprayJsonCollection[T <: {def id : K}, K]
 }
 
 /** Mixin to get an implicit SprayJsonSerialisation in scope. */
-trait SprayJsonSerializers {
-  implicit def sprayJsonSerializer[T: JsonFormat]: SprayJsonSerialisation[T] = new SprayJsonSerialisation[T]
+trait SprayJsonSerialisers {
+  implicit def sprayJsonSerialiser[T: JsonFormat]: SprayJsonSerialisation[T] = new SprayJsonSerialisation[T]
 }
 
 

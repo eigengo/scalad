@@ -3,7 +3,7 @@ package org.cakesolutions.scalad.experimental
 import org.cakesolutions.scalad._
 import com.mongodb.{BasicDBObjectBuilder, DBObject}
 import mongo.MongoSerialiser
-import mongo.sprayjson.SprayJsonSerializers
+import mongo.sprayjson.SprayJsonSerialisers
 
 /**
  * Native restrictions for JsObject and MongoDB
@@ -29,14 +29,14 @@ trait MongoJsonNativeRestrictions extends NativeRestrictions with MongoNativeRes
 
 }
 
-private[experimental] trait MongoNativeRestrictionMarshallers extends SprayJsonSerializers {
+private[experimental] trait MongoNativeRestrictionMarshallers extends SprayJsonSerialisers {
 
   implicit def getNativeRestrictionsMarshaller[A: MongoSerialiser]: NativeRestrictionsMarshaller[A] = new NativeRestrictionsMarshaller[A] {
-    val serializer = implicitly[MongoSerialiser[A]]
+    val serialiser = implicitly[MongoSerialiser[A]]
 
     type NativeRestrictionValue = DBObject
 
-    def marshal(value: A) = serializer.serialiseDB(value)
+    def marshal(value: A) = serialiser.serialiseDB(value)
   }
 
 }

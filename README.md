@@ -33,7 +33,7 @@ Typically, a `case class` will be persisted to a MongoDB collection, we can do t
 
 ```scala
 // with UuidMarshalling
-// with SprayJsonSerializers
+// with SprayJsonSerialisers
 
 case class MyCaseClass(id: UUID, name: String, count: Long)
 
@@ -77,7 +77,7 @@ The traditional concept of database row (or document) identity is by an `id` fie
 
 ```scala
 // the parameter to the instance is the name of the field
-implicit val MyCaseClassIdentity = new SerializedIdentityQueryBuilder[MyCaseClass, UUID]("id") {
+implicit val MyCaseClassIdentity = new SerialisedIdentityQueryBuilder[MyCaseClass, UUID]("id") {
   // avoid expensive runtime reflection by explicitly retrieving the value
   def id(entity: MyCaseClass) = entity.id
 }
@@ -129,9 +129,9 @@ implicit val UuidSerialiser = new SprayJsonSerialisation[Uuid]
 implicit val LongSerialiser = new SprayJsonSerialisation[Long]
 
 // now register the fields as keys
-implicit val MyCaseClassUuidKey = new SerializedFieldQueryBuilder[MyCaseClass, UUID]("id")
-implicit val MyCaseClassStringKey = new SerializedFieldQueryBuilder[MyCaseClass, String]("name")
-implicit val MyCaseClassLongKey = new SerializedFieldQueryBuilder[MyCaseClass, Long]("count")
+implicit val MyCaseClassUuidKey = new SerialisedFieldQueryBuilder[MyCaseClass, UUID]("id")
+implicit val MyCaseClassStringKey = new SerialisedFieldQueryBuilder[MyCaseClass, String]("name")
+implicit val MyCaseClassLongKey = new SerialisedFieldQueryBuilder[MyCaseClass, Long]("count")
 
 // which allows the following
 
