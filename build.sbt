@@ -4,11 +4,11 @@ import sbtrelease._
 name := "Scalad"
 
 /** DON'T FORGET TO CHANGE version.sbt */
-version := "1.2.0-SNAPSHOT"
+version := "1.3.0-SNAPSHOT"
 
 organization := "org.cakesolutions"
 
-scalaVersion := "2.10.0"
+scalaVersion := "2.10.1"
 
 /** Shell */
 shellPrompt := { state => System.getProperty("user.name") + "> " }
@@ -38,7 +38,7 @@ credentials += Credentials(Path.userHome / ".artifactory" / ".credentials")
 
 libraryDependencies <<= scalaVersion { scala_version => 
     Seq(
-        "org.mongodb"          % "mongo-java-driver"   % "2.10.0",
+        "org.mongodb"          % "mongo-java-driver"   % "2.10.1",
         "com.typesafe"         % "config"              % "1.0.0",
         "io.spray"             %% "spray-json"          % "1.2.3",
         "org.specs2"           %% "specs2"              % "1.13" % "test",
