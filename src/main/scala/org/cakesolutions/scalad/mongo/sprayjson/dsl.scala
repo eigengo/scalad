@@ -1,9 +1,7 @@
-package org.cakesolutions.scalad
+package org.cakesolutions.scalad.mongo.sprayjson
 
-import language.postfixOps
-
-trait JsonDsl {
-
+object `package` {
+  import language.postfixOps
   import spray.json._
 
   implicit def jsonObjectWriter = new JsonWriter[JsObject] {

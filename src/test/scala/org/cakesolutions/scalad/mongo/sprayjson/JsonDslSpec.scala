@@ -1,9 +1,11 @@
-package org.cakesolutions.scalad
+package org.cakesolutions.scalad.mongo.sprayjson
 
 import spray.json._
 import org.specs2.mutable.Specification
 
-class JsonDslSpec extends Specification with JsonDsl with DefaultJsonProtocol {
+class JsonDslSpec extends Specification with DefaultJsonProtocol {
+
+  import org.cakesolutions.scalad.mongo.sprayjson._
 
   sequential
 

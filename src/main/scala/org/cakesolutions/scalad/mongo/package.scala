@@ -3,6 +3,7 @@ package org.cakesolutions.scalad.mongo
 import scala.collection._
 import com.mongodb._
 import java.util.logging.Logger
+import akka.contrib.jul.JavaLogging
 
 /** These implicits make the MongoDB API nicer to use, for example by allowing
   * JSON search queries to be passed instead of `DBObject`s.
@@ -11,11 +12,6 @@ object Implicits {
   import scala.language.implicitConversions
 
   implicit var JSON2DBObject = (json: String) => util.JSON.parse(json).asInstanceOf[DBObject]
-}
-
-/** Makes `java.util.logging` available as a `log` field. */
-trait J2SELogging {
-  protected lazy val log = Logger.getLogger(getClass.getName)
 }
 
 /** Mechanism for finding an entry in the database
@@ -100,14 +96,14 @@ protected object IndexedCollectionProvider {
 
 
 /** Easy way to add unique indexes to a Mongo collection. */
-trait IndexedCollectionProvider[T] extends CollectionProvider[T] with J2SELogging {
+trait IndexedCollectionProvider[T] extends CollectionProvider[T] with JavaLogging {
 
   doIndex()
 
   def doIndex() {
     import Implicits._
     if (IndexedCollectionProvider.privilegedIndexing(getCollection)) {
-      log.config("Ensuring indexes exist on " + getCollection)
+      log.debug("Ensuring indexes exist on " + getCollection)
       uniqueFields.foreach(field => getCollection.ensureIndex(field, null, true))
       indexFields.foreach(field => getCollection.ensureIndex(field, null, false))
     }

@@ -3,6 +3,7 @@ package org.cakesolutions.scalad.mongo
 import com.mongodb.DBObject
 import concurrent.{ExecutionContext, Future}
 import java.util.logging.Level
+import akka.contrib.jul.JavaLogging
 
 /** Search returned too many results.
   */
@@ -16,7 +17,7 @@ case class TooManyResults(query: DBObject) extends Exception
   * Implicit conversions from JSON syntax or DSLs bring these methods within reach of
   * most users.
   */
-trait MongoSearch extends J2SELogging {
+trait MongoSearch extends JavaLogging {
 
   /** @return the first result from the result of the query, or `None` if nothing found. */
   def searchFirst[T: CollectionProvider : MongoSerializer](query: DBObject): Option[T] = {
@@ -52,7 +53,7 @@ trait MongoSearch extends J2SELogging {
         cursor.close()
       }
     }.onFailure {
-      case t => log.log(Level.WARNING, "Future failed", t)
+      case t => log.error(t, "Future failed")
     }
 
     iterable
