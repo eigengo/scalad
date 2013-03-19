@@ -16,10 +16,10 @@ case class LongEntity(id: Long, word: String)
 
 trait LongEntityPersistence extends MongoCrudTestAccess {
 
-  implicit val LongEntitySerialiser = new MongoSerializer[LongEntity] {
-    def serialize(entity: LongEntity) = new BasicDBObjectBuilder().append("id", entity.id).append("word", entity.word).get()
+  implicit val LongEntitySerialiser = new MongoSerialiser[LongEntity] {
+    def serialise(entity: LongEntity) = new BasicDBObjectBuilder().append("id", entity.id).append("word", entity.word).get()
 
-    def deserialize(dbObject: Object) = {
+    def deserialise(dbObject: Object) = {
       val o = dbObject.asInstanceOf[BasicDBObject]
       LongEntity(o.getLong("id"), o.getString("word"))
     }
@@ -32,12 +32,12 @@ trait LongEntityPersistence extends MongoCrudTestAccess {
     def field = "id"
     def id(entity: LongEntity) = entity.id
   }
-  implicit val StringSerialiser = new MongoSerializer[String] {
-    def serialize(entity: String) = entity
+  implicit val StringSerialiser = new MongoSerialiser[String] {
+    def serialise(entity: String) = entity
 
-    def deserialize(dbObject: Object) = dbObject.toString
+    def deserialise(dbObject: Object) = dbObject.toString
   }
-  implicit val ReadByWord = new SerializedFieldQueryBuilder[LongEntity, String]("word")
+  implicit val ReadByWord = new SerialisedFieldQueryBuilder[LongEntity, String]("word")
 }
 
 /**

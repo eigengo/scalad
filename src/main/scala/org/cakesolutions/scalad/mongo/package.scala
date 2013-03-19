@@ -2,7 +2,6 @@ package org.cakesolutions.scalad.mongo
 
 import scala.collection._
 import com.mongodb._
-import java.util.logging.Logger
 import akka.contrib.jul.JavaLogging
 
 /** These implicits make the MongoDB API nicer to use, for example by allowing
@@ -33,13 +32,13 @@ trait KeyQueryBuilder[T, K] {
   * Unfortunately, the actual signatures needs to be `Object` so that
   * "primitive" types (`String`, `java.lang.Long`, etc) are supported.
   */
-trait MongoSerializer[T] {
+trait MongoSerialiser[T] {
   /** Only to be used when the entity is known to serialise non-trivially. */
-  def serializeDB(entity: T) = serialize(entity).asInstanceOf[DBObject]
+  def serialiseDB(entity: T) = serialise(entity).asInstanceOf[DBObject]
 
-  def serialize(entity: T): Object
+  def serialise(entity: T): Object
 
-  def deserialize(dbObject: Object): T
+  def deserialise(dbObject: Object): T
 }
 
 /** Access to a MongoDB `DBCollection`.
@@ -146,17 +145,17 @@ class StringFieldQuery[T](val field: String) extends FieldQueryBuilder[T, String
 class LongFieldQuery[T](val field: String) extends FieldQueryBuilder[T, Long]
 
 /** Provides a `read` query using serialised fields. */
-class SerializedFieldQueryBuilder[T, K](val field: String)
-                                       (implicit serialiser: MongoSerializer[K])
+class SerialisedFieldQueryBuilder[T, K](val field: String)
+                                       (implicit serialiser: MongoSerialiser[K])
   extends FieldQueryBuilder[T, K] {
-  override def createKeyQuery(key: K): DBObject = new BasicDBObject(field, serialiser.serialize(key))
+  override def createKeyQuery(key: K): DBObject = new BasicDBObject(field, serialiser.serialise(key))
 }
 
 /** Provides a concept of identity that resembles a SQL `field` column,
-  * with serialization on the field.
+  * with serialisation on the field.
   */
-abstract class SerializedIdentityQueryBuilder[T, K](val field: String)
-                                                   (implicit serialiser: MongoSerializer[K])
+abstract class SerialisedIdentityQueryBuilder[T, K](val field: String)
+                                                   (implicit serialiser: MongoSerialiser[K])
   extends FieldIdentityQueryBuilder[T, K] {
-  override def createIdQuery(entity: T) = new BasicDBObject(field, serialiser.serialize(id(entity)))
+  override def createIdQuery(entity: T) = new BasicDBObject(field, serialiser.serialise(id(entity)))
 }

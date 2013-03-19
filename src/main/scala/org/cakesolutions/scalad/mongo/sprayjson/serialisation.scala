@@ -5,7 +5,7 @@ import scala._
 import com.mongodb.{BasicDBObject, BasicDBList}
 import java.util.{UUID, Date}
 import org.bson.types.ObjectId
-import org.cakesolutions.scalad.mongo.{UuidChecker, MongoSerializer}
+import org.cakesolutions.scalad.mongo.{UuidChecker, MongoSerialiser}
 import akka.contrib.jul.JavaLogging
 
 /** Uses `spray-json` to serialise/deserialise database objects
@@ -15,11 +15,11 @@ import akka.contrib.jul.JavaLogging
   * 2. MongoDB does not have support for arbitrary precision numbers, see
   *    [[org.cakesolutions.scalad.mongo.sprayjson.BigNumberMarshalling]].
   */
-class SprayJsonSerialisation[T: JsonFormat] extends MongoSerializer[T] with SprayJsonConvertors with JavaLogging {
+class SprayJsonSerialisation[T: JsonFormat] extends MongoSerialiser[T] with SprayJsonConvertors with JavaLogging {
 
-  override def serialize(entity: T): Object = js2db(implicitly[JsonFormat[T]].write(entity))
+  override def serialise(entity: T): Object = js2db(implicitly[JsonFormat[T]].write(entity))
 
-  override def deserialize(found: Object): T = implicitly[JsonFormat[T]].read(obj2js(found))
+  override def deserialise(found: Object): T = implicitly[JsonFormat[T]].read(obj2js(found))
 
 }
 

@@ -7,11 +7,11 @@ trait MongoCreate {
     * (`CollectionProvider` is a good place to do this).
     * @return the parameter, or `None` if not added.
     */
-  def create[T: CollectionProvider : MongoSerializer](entity: T): Option[T] = {
+  def create[T: CollectionProvider : MongoSerialiser](entity: T): Option[T] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
-    val serialiser = implicitly[MongoSerializer[T]]
+    val serialiser = implicitly[MongoSerialiser[T]]
 
-    val result = collection.insert(serialiser serializeDB entity).getLastError
+    val result = collection.insert(serialiser serialiseDB entity).getLastError
     if (result.ok()) Some(entity)
     else None
   }

@@ -8,7 +8,7 @@ trait MongoCreateOrUpdate {
     * none was found. Involves two hits to the DB.
     * @return the parameter or `None` if the create failed.
     */
-  def createOrUpdateFirst[T: CollectionProvider : MongoSerializer : IdentityQueryBuilder](entity: T): Option[T] = {
+  def createOrUpdateFirst[T: CollectionProvider : MongoSerialiser : IdentityQueryBuilder](entity: T): Option[T] = {
     val updated = updateFirst(entity)
     updated match {
       case Some(_) =>

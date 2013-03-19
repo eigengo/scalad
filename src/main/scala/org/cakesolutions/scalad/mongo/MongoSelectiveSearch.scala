@@ -28,15 +28,15 @@ trait MongoSelectiveSearch {
     *         [[org.cakesolutions.scalad.mongo.MongoSearch.searchAll()]]
     *         and this method blocks.
     */
-  def searchAll[T: CollectionProvider : MongoSerializer](query: DBObject, selector: List[T] => List[T]): List[T] = {
+  def searchAll[T: CollectionProvider : MongoSerialiser](query: DBObject, selector: List[T] => List[T]): List[T] = {
     val collection = implicitly[CollectionProvider[T]].getCollection
-    val serialiser = implicitly[MongoSerializer[T]]
+    val serialiser = implicitly[MongoSerialiser[T]]
 
     val cursor = collection.find(query)
     try {
       val hits = new ArrayBuffer[T]
       while (cursor.hasNext) {
-        hits += serialiser deserialize cursor.next()
+        hits += serialiser deserialise cursor.next()
         if (hits.length % 100 == 0) {
           val trimmed = selector(hits.toList)
           hits.clear()

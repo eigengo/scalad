@@ -26,10 +26,10 @@ class SimpleSprayJsonCollection[T <: {def id : K}, K]
 
   override protected def uniqueFields = """{"id": 1}""" :: Nil
 
-  override def createKeyQuery(key: K): DBObject = new BasicDBObject("id", idSerialiser.serialize(key))
+  override def createKeyQuery(key: K): DBObject = new BasicDBObject("id", idSerialiser.serialise(key))
 
   import language.reflectiveCalls
-  override def createIdQuery(entity: T): DBObject = new BasicDBObject("id", idSerialiser.serialize(entity.id))
+  override def createIdQuery(entity: T): DBObject = new BasicDBObject("id", idSerialiser.serialise(entity.id))
 
 }
 

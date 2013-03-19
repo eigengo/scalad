@@ -11,11 +11,7 @@ class SerialisationSpec extends Specification with SprayJsonTestSupport {
 
   def mustSerialize[T: JsonFormat](entity: T, expected: Object) {
     val serializer = new SprayJsonSerialisation[T]
-    // HACK: DBObject does not guarantee that it implements equals
-    // as a workaround, we compare the JSON output, but that is no
-    // real way to compare things
-    //      util.JSON.serialize(serializer.serialize(entity)) must beEqualTo(util.JSON.serialize(expected))
-    serializer.serialize(entity) must beEqualTo(expected)
+    serializer.serialise(entity) must beEqualTo(expected)
   }
 
   /* Use this if you want to make sure you get back the same entity
@@ -23,17 +19,17 @@ class SerialisationSpec extends Specification with SprayJsonTestSupport {
    */
   def mustSerializeAndDeserialize[T: JsonFormat](entity: T) {
     val serializer = new SprayJsonSerialisation[T]
-    serializer.deserialize(serializer.serialize(entity)) must beEqualTo(entity)
+    serializer.deserialise(serializer.serialise(entity)) must beEqualTo(entity)
   }
 
   def mustDeserialize[T: JsonFormat](entity: Object, expected: T) {
     val serializer = new SprayJsonSerialisation[T]
-    serializer.deserialize(entity) must beEqualTo(expected)
+    serializer.deserialise(entity) must beEqualTo(expected)
   }
 
   def mustFailToDeserializeWith[T: JsonFormat, E <: Throwable : Manifest](entity: DBObject) {
     val serializer = new SprayJsonSerialisation[T]
-    serializer.deserialize(entity) must throwA[E]
+    serializer.deserialise(entity) must throwA[E]
   }
 
   "Spray-Json-base serializer" should {
