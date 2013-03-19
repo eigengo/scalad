@@ -74,6 +74,9 @@ with MongoDelete
 with MongoRead
 with MongoFind
 with MongoCreateOrUpdate
+with MongoModify
+with MongoAggregate
+with MongoCount
 
 // enables cross-instance concurrent DB indexing
 protected object IndexedCollectionProvider {
