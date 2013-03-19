@@ -68,7 +68,6 @@ trait CollectionProvider[T] {
   */
 class MongoCrud extends MongoCreate
 with MongoSearch
-with MongoSelectiveSearch
 with MongoUpdate
 with MongoDelete
 with MongoRead

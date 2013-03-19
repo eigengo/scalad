@@ -3,7 +3,6 @@ package org.cakesolutions.scalad.experimental
 import org.cakesolutions.scalad._
 import com.mongodb.{BasicDBObjectBuilder, DBObject}
 import mongo.MongoSerialiser
-import mongo.sprayjson.SprayJsonSerialisers
 
 /**
  * Native restrictions for JsObject and MongoDB
@@ -18,7 +17,7 @@ trait MongoJsonNativeRestrictions extends NativeRestrictions with MongoNativeRes
         case NotEqualsRestriction(path: String, value) => builder.add(path, value)
         case ConjunctionRestriction(lhs, rhs) => convert0(builder, lhs); convert0(builder, rhs)
         case DisjunctionRestriction(lhs, rhs) => convert0(builder, lhs); convert0(builder, rhs)
-        // ...
+        case _ => ???
       }
     }
 
@@ -29,7 +28,7 @@ trait MongoJsonNativeRestrictions extends NativeRestrictions with MongoNativeRes
 
 }
 
-private[experimental] trait MongoNativeRestrictionMarshallers extends SprayJsonSerialisers {
+private[experimental] trait MongoNativeRestrictionMarshallers {
 
   implicit def getNativeRestrictionsMarshaller[A: MongoSerialiser]: NativeRestrictionsMarshaller[A] = new NativeRestrictionsMarshaller[A] {
     val serialiser = implicitly[MongoSerialiser[A]]

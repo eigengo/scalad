@@ -19,7 +19,7 @@ case class Student(id: Long,
 
 
 trait SprayJsonTestSupport extends MongoCrudTestAccess
-with DefaultJsonProtocol with UuidMarshalling with DateMarshalling with BigNumberMarshalling with MongoQueries with JavaLogging {
+with DefaultJsonProtocol with UuidMarshalling with DateMarshalling with BigNumberMarshalling with JavaLogging {
   this: Specification =>
 
   implicit val PersonFormatter = jsonFormat3(Person)
@@ -29,6 +29,6 @@ with DefaultJsonProtocol with UuidMarshalling with DateMarshalling with BigNumbe
   implicit val LongSerialisation = new SprayJsonSerialisation[Long]
   implicit val UuidSerialisation = new SprayJsonSerialisation[UUID]
 
-  implicit val StudentCollectionProvider = new SimpleSprayJsonCollection[Student, Long](db, "students")
-  implicit val PersonCollectionProvider = new SimpleSprayJsonCollection[Person, UUID](db, "persons")
+  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students")
+  implicit val PersonCollectionProvider = new SprayMongoCollection[Person](db, "persons")
 }

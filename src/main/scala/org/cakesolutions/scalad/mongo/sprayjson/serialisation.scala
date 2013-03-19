@@ -20,7 +20,6 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerialiser[T] with Spra
   override def serialise(entity: T): Object = js2db(implicitly[JsonFormat[T]].write(entity))
 
   override def deserialise(found: Object): T = implicitly[JsonFormat[T]].read(obj2js(found))
-
 }
 
 trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMarshalling {
