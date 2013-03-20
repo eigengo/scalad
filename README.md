@@ -28,7 +28,7 @@ In particular, anybody wishing to use the [Aggregation Framework](http://docs.mo
 
 The best place to find more examples are the specs and the akka-patterns project:
 
-* [PersistenceSpec.scala](scalad/tree/master/src/test/scala/org/cakesolutions/scalad/mongo/sprayjson/PersistenceSpec.scala)
+* [PersistenceSpec.scala](src/test/scala/org/cakesolutions/scalad/mongo/sprayjson/PersistenceSpec.scala)
 * [Akka Patterns](https://github.com/janm399/akka-patterns)
 
 
