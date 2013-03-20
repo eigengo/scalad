@@ -4,7 +4,7 @@ import sbtrelease._
 name := "Scalad"
 
 /** DON'T FORGET TO CHANGE version.sbt */
-version := "1.2.0-SNAPSHOT"
+version := "1.2.0"
 
 organization := "org.cakesolutions"
 
