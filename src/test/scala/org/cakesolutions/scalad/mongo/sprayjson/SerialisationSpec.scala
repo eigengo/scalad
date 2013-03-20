@@ -168,12 +168,6 @@ class SerialisationSpec extends Specification with SprayJsonTestSupport {
       mustDeserialise(original, a1)
     }
 
-    "be able to serialise an heterogeneous List" in {
-      //Should the API be able to serialise heterogeneous List, like
-      //List(null, 10.12, "hello")?
-      todo
-    }
-
     "be able to serialise a Map" in {
       val original = Map("key" -> "value")
       mustSerialise(original, new BasicDBObject(original))

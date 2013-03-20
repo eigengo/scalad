@@ -5,41 +5,42 @@ import org.specs2.mutable.Specification
 
 class PersistenceSpec extends Specification with SprayJsonTestSupport {
 
+  sequential
+
+  val crud = new SprayMongo
+
+  val student = Student(
+    101287,
+    UUID.randomUUID(),
+    "Alfredo",
+    List(Person("John", "Doe"), Person("Mary", "Lamb")),
+    Address("Foo Rd.", 91),
+    graduated = true
+  )
+
+  implicit val StudentFormat = jsonFormat6(Student)
+
   "SprayJsonSerialisation" should {
-    sequential
 
-    val crud = ??? //new MongoCrud
-
-    val studUuid = UUID.randomUUID()
-    val student = Student(
-      101287,
-      studUuid,
-      "Alfredo",
-      List(Person("John", "Doe"), Person("Mary", "Lamb")),
-      Address("Foo Rd.", 91),
-      graduated = true
-    )
-
-    "ensure a Student is correctly persisted" in {
-      //crud.create(student).get must beEqualTo(student)
-      todo
+    "ensure a Student is created" in {
+      crud.create(student) === Some(student)
     }
 
     "ensure a Student is searchable by id" in {
-      todo
+      crud.searchFirst[Student]("id":>student.id) === Some(student)
     }
 
     "ensure a Student is searchable by name" in {
-      todo
+      crud.searchFirst[Student]("name":>student.name) === Some(student)
     }
 
     "ensure a Student is searchable by UUID" in {
-      todo
+      crud.searchFirst[Student]("collegeUuid":>student.collegeUuid) === Some(student)
     }
 
     "ensure a Student is searchable by nested JSON query" in {
-      //  """{"address": {"road": "Foo Rd.", "number": 91}}"""
-      todo
+      crud.searchFirst[Student]("address":> student.address) === Some(student)
+      crud.searchFirst[Student]("address":> {"road":> student.address.road <> "number":> student.address.number}) === Some(student)
     }
   }
 }
