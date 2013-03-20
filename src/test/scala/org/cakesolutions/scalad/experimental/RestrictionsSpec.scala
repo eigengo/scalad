@@ -1,7 +1,8 @@
-package org.cakesolutions.scalad
+package org.cakesolutions.scalad.experimental
 
-import mongo.LongEntity
 import org.specs2.mutable.Specification
+import org.cakesolutions.scalad.mongo.LongEntity
+
 
 class RestrictionsSpec extends Specification with Restrictions with StringRestrictionsPaths with SpecNativeRestrictions {
 

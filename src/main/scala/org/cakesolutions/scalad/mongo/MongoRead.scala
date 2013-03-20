@@ -10,7 +10,7 @@ trait MongoRead {
     */
   def readUnique[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
                                collectionProvider: CollectionProvider[T],
-                               serialiser: MongoSerializer[T]): Option[T] = {
+                               serialiser: MongoSerialiser[T]): Option[T] = {
     val query = keyBuilder.createKeyQuery(key)
     searchUnique(query)
   }
@@ -18,7 +18,7 @@ trait MongoRead {
   /** @return the first entity matching the key-based search, or `None`. */
   def readFirst[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
                               collectionProvider: CollectionProvider[T],
-                              serialiser: MongoSerializer[T]): Option[T] = {
+                              serialiser: MongoSerialiser[T]): Option[T] = {
     val query = keyBuilder.createKeyQuery(key)
     searchFirst(query)
   }
@@ -26,7 +26,7 @@ trait MongoRead {
   /** @return all entities matching the key-based search. */
   def readAll[T, K](key: K)(implicit keyBuilder: KeyQueryBuilder[T, K],
                             collectionProvider: CollectionProvider[T],
-                            serialiser: MongoSerializer[T]): ConsumerIterator[T] = {
+                            serialiser: MongoSerialiser[T]): ConsumerIterator[T] = {
     val query = keyBuilder.createKeyQuery(key)
     searchAll(query)
   }
