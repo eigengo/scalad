@@ -1,4 +1,6 @@
-package org.cakesolutions.scalad
+package org.cakesolutions.scalad.experimental
+
+import scala.language.implicitConversions
 
 sealed trait Restriction
 case class EqualsRestriction[A, Path](path: Path, value: A) extends Restriction with RestrictionOps
