@@ -26,9 +26,4 @@ with DefaultJsonProtocol with UuidMarshalling with DateMarshalling with BigNumbe
   implicit val AddressFormatter = jsonFormat2(Address)
   implicit val StudentFormatter = jsonFormat6(Student)
 
-  implicit val LongSerialisation = new SprayJsonSerialisation[Long]
-  implicit val UuidSerialisation = new SprayJsonSerialisation[UUID]
-
-  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students")
-  implicit val PersonCollectionProvider = new SprayMongoCollection[Person](db, "persons")
 }

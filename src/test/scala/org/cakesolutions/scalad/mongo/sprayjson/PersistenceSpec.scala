@@ -18,7 +18,7 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport {
     graduated = true
   )
 
-  implicit val StudentFormat = jsonFormat6(Student)
+  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students", List("id":>1))
 
   "SprayJsonSerialisation" should {
 
