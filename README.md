@@ -15,7 +15,7 @@ val crud = new SprayMongo
 crud.create(entity)
 
 val update = entity.copy(name = "Bar")
-crud.findAndReplace(entity, update)
+crud.findAndReplace("id":>entity.id, update)
 
 val morePopular = crud.searchAll("count":> {"$gte":> update.count})  // awesome DSL for JSON
 ```
