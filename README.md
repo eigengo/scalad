@@ -22,8 +22,6 @@ val morePopular = crud.searchAll("count":> {"$gte":> update.count})  // awesome 
 
 However, anybody using this library is strongly encouraged to read the [MongoDB Documentation](http://docs.mongodb.org/manual/) as it is often necessary to get close to the raw queries to understand what is happening, especially the [Aggregation Framework](http://docs.mongodb.org/manual/applications/aggregation/).
 
-**We are aware that there is a lot of boilerplate involved in setting up Spray JSON implicits – we are hoping to automatically generate this code in a future release.**
-
 The best place to find more examples are the specs and the akka-patterns project:
 
 * [PersistenceSpec.scala](src/test/scala/org/cakesolutions/scalad/mongo/sprayjson/PersistenceSpec.scala)
@@ -34,7 +32,7 @@ The best place to find more examples are the specs and the akka-patterns project
 
 Because we're using Spray JSON to do the marshalling, it means that only JSON compatible objects are naturally supported by ScalaD.
 
-However, JSON is missing a few keys object types, such as: `Date`, `UUID` and any distinction between number types.
+However, JSON is missing a few key object types, such as: `Date`, `UUID` and any distinction between number types.
 
 MongoDB BSON is also missing a few key object types, such as: `UUID`, `BigInt` and `BigDecimal`. Indeed, MongoDB treats numbers as primitive types and has no support for arbitrary precision numbers.
 
@@ -49,7 +47,7 @@ We provide JSON marshallers for `UuidMarshalling` and `DateMarshalling` which cr
 the serialisation layer will ensure that these are saved as `BinData` and `DateFormat` accordingly.
 
 
-If you want to use arbitrary precision numbers, we provide case classes (and Spray JSON marshallers) called `StringBigInt` and `StringBigDecimal` which marshall to `String`.
+If you want to use arbitrary precision numbers, we provide case classes (and Spray JSON marshallers) called `StringBigInt` and `StringBigDecimal` which marshall to `String`. Hopefully Spray JSON will address this magically with a fix to their [issue #44](https://github.com/spray/spray-json/issues/44).
 
 
 Be warned that although Spray JSON will correctly marshall raw `BigInt`s and `BigDecimal`s, MongoDB will silently drop the precision (ScalaD will detect this and create a log for every object that loses precision, so hopefully this is caught at development time).
