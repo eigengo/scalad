@@ -3,6 +3,7 @@ package org.cakesolutions.scalad.mongo.sprayjson
 import java.util.UUID
 import org.specs2.mutable.Specification
 import spray.json.JsNull
+import com.mongodb.MongoException
 
 class PersistenceSpec extends Specification with SprayJsonTestSupport with NullMarshalling {
 
@@ -21,12 +22,16 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
 
   val modified = student.copy(graduated = true)
 
-  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students", List("id":>1))
+  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students", List("collegeUuid":>1), List("id":>1))
 
   "SprayJsonSerialisation" should {
 
     "ensure a Student is created" in {
       crud.create(student) === Some(student)
+    }
+
+    "ensure the uniqueness constraint is respected" in {
+      crud.create(student) should throwA[MongoException]
     }
 
     "ensure a Student is searchable by id" in {
