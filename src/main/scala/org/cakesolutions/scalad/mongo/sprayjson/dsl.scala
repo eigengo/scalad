@@ -19,7 +19,7 @@ object `package` {
 
   implicit class JsObjectBuilder[V: JsonWriter](key: String) extends DefaultJsonProtocol {
     val writer = implicitly[JsonWriter[V]]
-    def :>(that: V): JsObject = JsObject(Map(key -> writer.write(that)))
+    def :>(that: V): JsObject = new JsObject(Map(key -> writer.write(that)))
   }
 
   implicit class JsObjectMonoidalMappend(obj: JsObject) extends DefaultJsonProtocol {

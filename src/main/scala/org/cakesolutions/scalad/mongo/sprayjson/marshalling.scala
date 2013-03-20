@@ -169,3 +169,11 @@ case class NoParamCaseClassFormat[T](instance: T) extends RootJsonFormat[T] {
     case x => deserializationError("Expected JsString, but got " + x)
   }
 }
+
+// nulls are used in some Mongo Queries, so don't forget to import this
+trait NullMarshalling {
+  implicit protected val NullFormat = new RootJsonFormat[Null] {
+    def write(obj: Null) = JsNull
+    def read(json: JsValue) = null
+  }
+}

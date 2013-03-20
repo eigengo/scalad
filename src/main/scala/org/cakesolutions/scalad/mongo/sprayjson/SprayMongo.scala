@@ -57,6 +57,9 @@ class SprayMongo extends Implicits with JavaLogging {
     else Some(serialiser[T] deserialise result)
   }
 
+  // note, mongodb 2.3.x introduced a lot of fixes to the aggregation framework,
+  // e.g. allowing for binary data to be included in pipelines.
+  // https://github.com/janm399/scalad/issues/63
   def aggregate[T: CollectionProvider](pipeline: JsObject*): List[JsValue] = {
     val bsons = pipeline.map {
       SprayJsonToDBObject _
