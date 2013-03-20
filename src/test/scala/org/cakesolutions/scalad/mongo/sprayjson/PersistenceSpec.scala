@@ -42,5 +42,18 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport {
       crud.searchFirst[Student]("address":> student.address) === Some(student)
       crud.searchFirst[Student]("address":> {"road":> student.address.road <> "number":> student.address.number}) === Some(student)
     }
+
+    "ensure a Student is modifyable" in {
+      todo
+    }
+
+
+    "ensure a Student is updateable" in {
+      todo
+    }
+
+    "ensure a Student can be deleted" in {
+      todo
+    }
   }
 }
