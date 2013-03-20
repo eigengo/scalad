@@ -20,9 +20,7 @@ crud.findAndReplace("id":>entity.id, update)
 val morePopular = crud.searchAll("count":> {"$gte":> update.count})  // awesome DSL for JSON
 ```
 
-However, anybody using this library is strongly encouraged to read the [MongoDB Documentation](http://docs.mongodb.org/manual/) as it is often necessary to get close to the raw queries to understand what is happening.
-
-In particular, anybody wishing to use the [Aggregation Framework](http://docs.mongodb.org/manual/applications/aggregation/), or perform partial updates (`$set`), will have to revert to the Java API to a large extent (ScalaD provides some nice convenience conversions for doing this).
+However, anybody using this library is strongly encouraged to read the [MongoDB Documentation](http://docs.mongodb.org/manual/) as it is often necessary to get close to the raw queries to understand what is happening, especially the [Aggregation Framework](http://docs.mongodb.org/manual/applications/aggregation/).
 
 **We are aware that there is a lot of boilerplate involved in setting up Spray JSON implicits – we are hoping to automatically generate this code in a future release.**
 
