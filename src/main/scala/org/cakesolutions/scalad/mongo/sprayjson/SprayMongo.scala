@@ -19,17 +19,18 @@ trait Implicits extends SprayJsonConvertors {
 /** MongoDB format for indexing fields, e.g. {"key": 1} */
 class SprayMongoCollection[T](db: DB,
                               name: String,
-                              indexFields: List[JsObject] = Nil,
-                              uniqueFields: List[JsObject] = Nil)
+                              uniqueIndexes: JsObject*)
   extends CollectionProvider[T] with Implicits with JavaLogging {
 
   def getCollection = db.getCollection(name)
 
   if (IndexedCollectionProvider.privilegedIndexing(getCollection)) {
     log.debug("Ensuring indexes exist on " + getCollection)
-    uniqueFields.foreach(field => getCollection.ensureIndex(field, null, true))
-    indexFields.foreach(field => getCollection.ensureIndex(field, null, false))
+    uniqueIndexes.foreach(field => getCollection.ensureIndex(field, null, true))
+    indexes.foreach(field => getCollection.ensureIndex(field, null, false))
   }
+
+  def indexes: List[JsObject] = Nil
 }
 
 /** Forwards all requests to the ScalaD API, independent of the Java MongoDB API.
@@ -56,6 +57,9 @@ class SprayMongo extends Implicits with JavaLogging {
     if (result == null) None
     else Some(serialiser[T] deserialise result)
   }
+
+  def count[T: CollectionProvider : JsonFormat](query: JsObject): Long =
+    implicitly[CollectionProvider[T]].getCollection.count(query)
 
   // note, mongodb 2.3.x introduced a lot of fixes to the aggregation framework,
   // e.g. allowing for binary data to be included in pipelines.

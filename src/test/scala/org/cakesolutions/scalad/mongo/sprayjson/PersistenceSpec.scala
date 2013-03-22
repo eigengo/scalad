@@ -2,7 +2,7 @@ package org.cakesolutions.scalad.mongo.sprayjson
 
 import java.util.UUID
 import org.specs2.mutable.Specification
-import spray.json.JsNull
+import spray.json.{JsObject, JsNull}
 import com.mongodb.MongoException
 
 class PersistenceSpec extends Specification with SprayJsonTestSupport with NullMarshalling {
@@ -22,7 +22,9 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
 
   val modified = student.copy(graduated = true)
 
-  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students", List("collegeUuid":>1), List("id":>1))
+  implicit val StudentCollectionProvider = new SprayMongoCollection[Student](db, "students", "id":>1) {
+    override def indexes: List[JsObject] = {"collegeUuid":>1} :: Nil
+  }
 
   "SprayJsonSerialisation" should {
 
@@ -72,6 +74,8 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
       crud.create(student.copy(id = 2))
       crud.create(student.copy(id = 3, name = "Evil Alfredo"))
       crud.create(student.copy(id = 4, collegeUuid = UUID.randomUUID()))
+
+      // this could be achieved with a count()... it's just a POC
       crud.aggregate[Student](
           "$match":> {"name":> "Alfredo"},
           "$match":> {"collegeUuid" :> student.collegeUuid},
@@ -79,6 +83,10 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
           "$project" :> {"_id":> 0 <> "count":> 1}
       ) === List({"count":> 3})
       // if this fails, you might be running < mongo 2.3.x
+    }
+
+    "ensure Students can be counted" in {
+      crud.count[Student]("id":>{"$exists":>true}) === 5
     }
   }
 }
