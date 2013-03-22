@@ -12,12 +12,11 @@ val entity = ...
 
 val crud = new SprayMongo
 
-crud.create(entity)
+crud.insert(entity)
+crud.findAndUpdate("id":>entity.id, "$set":>{"name":>"Bar"})
+val update = crud.findOne("id":>entity.id)
 
-val update = entity.copy(name = "Bar")
-crud.findAndReplace("id":>entity.id, update)
-
-val morePopular = crud.searchAll("count":> {"$gte":> update.count})  // awesome DSL for JSON
+val popular = crud.find("count":> {"$gte":> update.count})  // awesome DSL for JSON
 ```
 
 However, anybody using this library is strongly encouraged to read the [MongoDB Documentation](http://docs.mongodb.org/manual/) as it is often necessary to get close to the raw queries to understand what is happening, especially the [Aggregation Framework](http://docs.mongodb.org/manual/applications/aggregation/).
