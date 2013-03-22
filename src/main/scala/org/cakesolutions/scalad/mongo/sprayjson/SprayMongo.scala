@@ -3,7 +3,7 @@ package org.cakesolutions.scalad.mongo.sprayjson
 import org.cakesolutions.scalad.mongo._
 import spray.json.{JsValue, JsObject, JsonFormat}
 import akka.contrib.jul.JavaLogging
-import com.mongodb.{DB, DBObject}
+import com.mongodb.{WriteConcern, DB, DBObject}
 import spray.json.pimpAny
 import scala.language.implicitConversions
 
@@ -43,6 +43,9 @@ class SprayMongo extends Implicits with JavaLogging {
   private val scalad = new MongoCrud
 
   def create[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity)
+
+  // good for fire-and-forget writes that happen often, e.g. writing logs
+  def createFast[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity, WriteConcern.UNACKNOWLEDGED)
 
   def findOne[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = scalad.searchFirst(query)
 
