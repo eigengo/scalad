@@ -29,11 +29,11 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
   "SprayJsonSerialisation" should {
 
     "ensure a Student is created" in {
-      crud.create(student) === Some(student)
+      crud.insert(student) === Some(student)
     }
 
     "ensure the uniqueness constraint is respected" in {
-      crud.create(student) should throwA[MongoException]
+      crud.insert(student) should throwA[MongoException]
     }
 
     "ensure a Student is searchable by id" in {
@@ -64,16 +64,16 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
     }
 
     "ensure a Student can be deleted" in {
-      crud.deleteOne[Student]("id":>student.id)
+      crud.removeOne[Student]("id":>student.id)
       crud.findOne[Student]("id":>student.id) === None
     }
 
     "ensure we can run aggregate queries on Students" in {
-      crud.create(student)
-      crud.create(student.copy(id = 1))
-      crud.create(student.copy(id = 2))
-      crud.create(student.copy(id = 3, name = "Evil Alfredo"))
-      crud.create(student.copy(id = 4, collegeUuid = UUID.randomUUID()))
+      crud.insert(student)
+      crud.insert(student.copy(id = 1))
+      crud.insert(student.copy(id = 2))
+      crud.insert(student.copy(id = 3, name = "Evil Alfredo"))
+      crud.insert(student.copy(id = 4, collegeUuid = UUID.randomUUID()))
 
       // this could be achieved with a count()... it's just a POC
       crud.aggregate[Student](

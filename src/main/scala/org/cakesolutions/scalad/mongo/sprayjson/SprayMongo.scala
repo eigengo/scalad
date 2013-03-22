@@ -42,10 +42,10 @@ class SprayMongo extends Implicits with JavaLogging {
 
   private val scalad = new MongoCrud
 
-  def create[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity)
+  def insert[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity)
 
   // good for fire-and-forget writes that happen often, e.g. writing logs
-  def createFast[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity, WriteConcern.UNACKNOWLEDGED)
+  def insertFast[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity, WriteConcern.UNACKNOWLEDGED)
 
   def findOne[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = scalad.searchFirst(query)
 
@@ -55,7 +55,7 @@ class SprayMongo extends Implicits with JavaLogging {
 
   def findAndReplace[T: CollectionProvider : JsonFormat](query: JsObject, update: T) = scalad.findAndModify(query, update.toJson)
 
-  def deleteOne[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = {
+  def removeOne[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = {
     val result = implicitly[CollectionProvider[T]].getCollection.findAndRemove(query)
     if (result == null) None
     else Some(serialiser[T] deserialise result)
