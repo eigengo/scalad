@@ -44,15 +44,15 @@ class SprayMongo extends Implicits with JavaLogging {
 
   def create[T: CollectionProvider : JsonFormat](entity: T): Option[T] = scalad.create(entity)
 
-  def searchFirst[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = scalad.searchFirst(query)
+  def findOne[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = scalad.searchFirst(query)
 
-  def searchAll[T: CollectionProvider : JsonFormat](query: JsObject): ConsumerIterator[T] = scalad.searchAll(query)
+  def find[T: CollectionProvider : JsonFormat](query: JsObject): ConsumerIterator[T] = scalad.searchAll(query)
 
   def findAndModify[T: CollectionProvider](query: JsObject, rule: JsObject) = scalad.findAndModify(query, rule)
 
   def findAndReplace[T: CollectionProvider : JsonFormat](query: JsObject, update: T) = scalad.findAndModify(query, update.toJson)
 
-  def deleteFirst[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = {
+  def deleteOne[T: CollectionProvider : JsonFormat](query: JsObject): Option[T] = {
     val result = implicitly[CollectionProvider[T]].getCollection.findAndRemove(query)
     if (result == null) None
     else Some(serialiser[T] deserialise result)

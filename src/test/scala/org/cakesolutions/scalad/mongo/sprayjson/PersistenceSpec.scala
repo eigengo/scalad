@@ -37,35 +37,35 @@ class PersistenceSpec extends Specification with SprayJsonTestSupport with NullM
     }
 
     "ensure a Student is searchable by id" in {
-      crud.searchFirst[Student]("id":>student.id) === Some(student)
+      crud.findOne[Student]("id":>student.id) === Some(student)
     }
 
     "ensure a Student is searchable by name" in {
-      crud.searchFirst[Student]("name":>student.name) === Some(student)
+      crud.findOne[Student]("name":>student.name) === Some(student)
     }
 
     "ensure a Student is searchable by UUID" in {
-      crud.searchFirst[Student]("collegeUuid":>student.collegeUuid) === Some(student)
+      crud.findOne[Student]("collegeUuid":>student.collegeUuid) === Some(student)
     }
 
     "ensure a Student is searchable by nested JSON query" in {
-      crud.searchFirst[Student]("address":> student.address) === Some(student)
-      crud.searchFirst[Student]("address":> {"road":> student.address.road <> "number":> student.address.number}) === Some(student)
+      crud.findOne[Student]("address":> student.address) === Some(student)
+      crud.findOne[Student]("address":> {"road":> student.address.road <> "number":> student.address.number}) === Some(student)
     }
 
     "ensure a Student is modifyable" in {
       crud.findAndModify[Student]("id":>student.id, "$set":>{"graduated":> modified.graduated})
-      crud.searchFirst[Student]("id":>student.id) === Some(modified)
+      crud.findOne[Student]("id":>student.id) === Some(modified)
     }
 
     "ensure a Student is replaceable" in {
       crud.findAndReplace[Student]("id":>student.id, student)
-      crud.searchFirst[Student]("id":>student.id) === Some(student)
+      crud.findOne[Student]("id":>student.id) === Some(student)
     }
 
     "ensure a Student can be deleted" in {
-      crud.deleteFirst[Student]("id":>student.id)
-      crud.searchFirst[Student]("id":>student.id) === None
+      crud.deleteOne[Student]("id":>student.id)
+      crud.findOne[Student]("id":>student.id) === None
     }
 
     "ensure we can run aggregate queries on Students" in {
