@@ -61,6 +61,9 @@ class SprayMongo extends Implicits with JavaLogging {
   def count[T: CollectionProvider : JsonFormat](query: JsObject): Long =
     implicitly[CollectionProvider[T]].getCollection.count(query)
 
+  def count[T: CollectionProvider : JsonFormat](): Long =
+    implicitly[CollectionProvider[T]].getCollection.count()
+
   // note, mongodb 2.3.x introduced a lot of fixes to the aggregation framework,
   // e.g. allowing for binary data to be included in pipelines.
   // https://github.com/janm399/scalad/issues/63
