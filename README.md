@@ -26,6 +26,23 @@ The best place to find more examples are the specs and the akka-patterns project
 * [PersistenceSpec.scala](src/test/scala/org/cakesolutions/scalad/mongo/sprayjson/PersistenceSpec.scala)
 * [Akka Patterns](https://github.com/janm399/akka-patterns)
 
+## Dependencies
+
+Add the dependency to your build file. In SBT, write
+
+```scala
+"org.eigengo" % "scalad" %% "1.3.0-EG"
+```
+
+or, if you must use Maven, write
+
+```xml
+<dependency>
+  <groupId>org.eigengo</groupId>
+  <artifactId>scalad_2.10</artifactId>
+  <version>1.3.0-EG</version>
+</dependency>
+```
 
 ## Special Types
 
