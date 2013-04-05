@@ -61,7 +61,7 @@ pomExtra := (
   </developers>
 )
 
-credentials += Credentials(Path.userHome / ".artifactory" / ".credentials")
+credentials += Credentials(Path.userHome / ".sonatype")
 
 libraryDependencies <<= scalaVersion { scala_version => 
     Seq(
