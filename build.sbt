@@ -6,7 +6,7 @@ name := "Scalad"
 /** DON'T FORGET TO CHANGE version.sbt */
 version := "1.3.0-SNAPSHOT"
 
-organization := "org.cakesolutions"
+organization := "org.eigengo"
 
 scalaVersion := "2.10.1"
 
@@ -22,19 +22,46 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 resolvers += "Sonatype OSS Releases" at "http://oss.sonatype.org/content/repositories/releases/"
 
-//resolvers += "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
+publishTo <<= version { v: String =>
+  val nexus = "https://oss.sonatype.org/"
+  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else                             Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
 
 publishMavenStyle := true
 
-publishTo <<= version { (v: String) =>
-  if (v.trim.endsWith("SNAPSHOT"))
-    Some("Cakesolutions Artifactory Snapshots" at "http://build.cakesolutions.net/artifactory/libs-snapshot-local")
-  else
-    Some("Cakesolutions Artifactory Releases" at "http://build.cakesolutions.net/artifactory/libs-release-local")
-}
+publishArtifact in Test := false
+
+pomIncludeRepository := { x => false }
+
+pomExtra := (
+  <url>http://www.eigengo.org/scalad.html</url>
+  <licenses>
+    <license>
+      <name>BSD-style</name>
+      <url>http://www.opensource.org/licenses/bsd-license.php</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <url>git@github.com:janm399/scalad.git</url>
+    <connection>scm:git:git@github.com:janm399/scalad.git</connection>
+  </scm>
+  <developers>
+    <developer>
+      <id>janmachacek</id>
+      <name>Jan Machacek</name>
+      <url>http://www.eigengo.org</url>
+    </developer>
+    <developer>
+      <id>anirvanchakraborty</id>
+      <name>Anirvan Chakraborty</name>
+      <url>http://www.eigengo.org</url>
+    </developer>
+  </developers>
+)
 
 credentials += Credentials(Path.userHome / ".artifactory" / ".credentials")
-
 
 libraryDependencies <<= scalaVersion { scala_version => 
     Seq(
@@ -72,5 +99,5 @@ testOptions := Seq(Tests.Filter(s =>
     s.matches("org.specs2.guide.*")))
 
 /** Console */
-initialCommands in console := "import org.cakesolutions.scalad._"
+initialCommands in console := "import org.eigengo.scalad._"
 
