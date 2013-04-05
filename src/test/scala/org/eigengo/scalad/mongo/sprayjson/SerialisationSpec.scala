@@ -196,8 +196,7 @@ class SerialisationSpec extends Specification with SprayJsonTestSupport {
 
     "be able to serialise a Person" in {
       val original = Person("John", "Doe")
-      val expected = new BasicDBObject(Map("name" -> "John",
-        "surname" -> "Doe"))
+      val expected = new BasicDBObject(Map("name" -> "John", "surname" -> "Doe", "id" -> original.id))
       mustSerialise(original, expected)
     }
 

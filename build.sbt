@@ -3,9 +3,6 @@ import sbtrelease._
 /** Project */
 name := "Scalad"
 
-/** DON'T FORGET TO CHANGE version.sbt */
-version := "1.3.0-SNAPSHOT"
-
 organization := "org.eigengo"
 
 scalaVersion := "2.10.1"
