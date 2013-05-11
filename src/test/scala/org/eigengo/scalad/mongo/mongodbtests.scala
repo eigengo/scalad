@@ -26,6 +26,9 @@ trait LongEntityPersistence extends MongoCrudTestAccess {
   }
   implicit val LongEntityCollectionProvider = new IndexedCollectionProvider[LongEntity] {
     def getCollection = db.getCollection("long_entities")
+
+    /** `String`s containing the JSON definition of the index to build. */
+    override protected def uniqueFields = "{id:1}" :: Nil
   }
   implicit val LongEntityLongKey = new LongFieldQuery[LongEntity]("id")
   implicit val LongEntityIdentity = new FieldIdentityQueryBuilder[LongEntity, Long]{
