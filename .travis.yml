@@ -9,6 +9,10 @@ jdk:
   - oraclejdk7
   - openjdk7
 
+# Enabling services by requiring MongoDB
+services:
+  - mongodb
+
 # Custom notification settings
 notifications:
   email:
