@@ -1,4 +1,4 @@
-# ScalaD
+# ScalaD  [![Build Status](https://travis-ci.org/eigengo/scalad.png?branch=master)](https://travis-ci.org/eigengo/scalad)
 
 Reuse [Spray JSON](http://github.com/spray/spray-json/) formatters as serialisers for [MongoDB](http://www.mongodb.org) persistence in Scala, and get access to a useful CRUD for performing simple searches.
 
