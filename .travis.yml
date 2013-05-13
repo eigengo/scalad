@@ -1,0 +1,21 @@
+# See http://about.travis-ci.org/docs/user/build-configuration/
+language: scala
+
+scala:
+  - 2.10.1
+
+# Testing with OpenJDK7 as well just to be adventurous!
+jdk:
+  - oraclejdk7
+  - openjdk7
+
+# Enabling services by requiring MongoDB
+services:
+  - mongodb
+
+# Custom notification settings
+notifications:
+  email:
+    recipients:
+      - anirvanchakraborty@gmail.com
+      - jan.machacek@gmail.com
