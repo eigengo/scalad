@@ -31,7 +31,7 @@ The best place to find more examples are the specs and the akka-patterns project
 Add the dependency to your build file. In SBT, write
 
 ```scala
-"org.eigengo" % "scalad" %% "1.3.0-EG"
+"org.eigengo" %% "scalad" % "1.3.1"
 ```
 
 or, if you must use Maven, write
@@ -40,7 +40,7 @@ or, if you must use Maven, write
 <dependency>
   <groupId>org.eigengo</groupId>
   <artifactId>scalad_2.10</artifactId>
-  <version>1.3.0-EG</version>
+  <version>1.3.1</version>
 </dependency>
 ```
 
