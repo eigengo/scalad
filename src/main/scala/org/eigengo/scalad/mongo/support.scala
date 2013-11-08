@@ -1,6 +1,6 @@
 package org.eigengo.scalad.mongo
 
-import java.util.{Date, UUID}
+import java.util.{Date, UUID, TimeZone}
 import java.text.{ParseException, SimpleDateFormat}
 
 trait UuidChecker {
@@ -15,7 +15,11 @@ trait UuidChecker {
 
 trait IsoDateChecker {
   private val localIsoDateFormatter = new ThreadLocal[SimpleDateFormat] {
-    override def initialValue() = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    override def initialValue() = {
+      val f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      f.setTimeZone(TimeZone.getTimeZone("UTC"))
+      f
+    }
   }
 
   def dateToIsoString(date: Date) = localIsoDateFormatter.get().format(date)

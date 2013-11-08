@@ -41,3 +41,5 @@ out
 fabfile.py
 *.pyc
 *.swp
+*~
+tags
