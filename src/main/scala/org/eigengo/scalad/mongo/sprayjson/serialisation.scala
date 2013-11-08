@@ -7,6 +7,7 @@ import java.util.{UUID, Date}
 import org.bson.types.ObjectId
 import org.eigengo.scalad.mongo.{UuidChecker, MongoSerialiser}
 import akka.contrib.jul.JavaLogging
+import org.joda.time.DateTime
 
 /** Uses `spray-json` to serialise/deserialise database objects
   * directly from `JsObject` -> `DBObject`.
@@ -49,7 +50,7 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
         list
       case o: JsObject =>
         val fields = o.fields
-        if (fields.contains("$date")) o.convertTo[Date]
+        if (fields.contains("$date")) o.convertTo[DateTime]
         else if (fields.contains("$uuid")) o.convertTo[UUID]
         else new BasicDBObject(fields.map(f => (f._1, js2db(f._2))).toMap)
     }

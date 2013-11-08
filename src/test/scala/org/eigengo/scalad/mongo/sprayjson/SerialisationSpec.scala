@@ -6,6 +6,7 @@ import scala.collection.convert.WrapAsJava._
 import scala.collection.convert.WrapAsScala._
 import java.util.{Date, UUID}
 import spray.json.{JsonFormat, JsNull}
+import org.joda.time.DateTime
 
 class SerialisationSpec extends Specification with SprayJsonTestSupport {
 
@@ -102,14 +103,10 @@ class SerialisationSpec extends Specification with SprayJsonTestSupport {
       mustDeserialise(UUID.fromString(string), json)
     }
 
-    "be able to serialise a Date" in {
-      val json = Map("$date" -> "2013-02-04T17:51:35.479+0000")
-      mustSerialise(json, new Date(1360000295479L))
-    }
-
-    "be able to deserialise a Date" in {
-      val json = Map("$date" -> "2013-02-04T17:51:35.479+0000")
-      mustDeserialise(new Date(1360000295479L), json)
+    "be able to deserialise and serialize a DateTime" in {
+      val d = new DateTime(1360000295479L)
+      val serialiser = new SprayJsonSerialisation[DateTime]
+      serialiser.serialise(serialiser.deserialise(d)) must beEqualTo(d)
     }
 
     //    "be able to serialise a StringBigDecimal" in {
