@@ -23,7 +23,7 @@ object `package` {
   }
 
   implicit class JsObjectMonoidalMappend(obj: JsObject) extends DefaultJsonProtocol {
-    def <>(that: JsObject) = (obj.fields ++ that.fields).toJson
+    def <>(that: JsObject) = (obj.fields ++ that.fields).toJson.asJsObject
     def ~(that: JsObject) = obj <> that
   }
 }

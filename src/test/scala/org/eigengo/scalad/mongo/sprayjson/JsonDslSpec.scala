@@ -36,13 +36,10 @@ class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarsha
     }
 
     "allow monoid-like mappending of objects" in {
-      ({
-        "foo" :> {
-          "bar" :> 10
-        }
-      } <> {
-        "age" :> 45
-      }) === JsonParser( """{"foo":{"bar":10},"age":45}""")
+      ("foo" :> { "bar" :> 10 } <>
+       "age" :> 45 <>
+       "base" :> 50
+      ) === JsonParser( """{"foo":{"bar":10},"age":45}""")
     }
 
     "correctly handle JSON arrays" in {
