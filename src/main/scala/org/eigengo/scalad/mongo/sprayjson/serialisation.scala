@@ -3,10 +3,11 @@ package org.eigengo.scalad.mongo.sprayjson
 import spray.json._
 import scala._
 import com.mongodb.{BasicDBObject, BasicDBList}
-import java.util.{UUID, Date}
+import java.util.{UUID}
 import org.bson.types.ObjectId
 import org.eigengo.scalad.mongo.{UuidChecker, MongoSerialiser}
 import akka.contrib.jul.JavaLogging
+import org.joda.time.DateTime
 
 /** Uses `spray-json` to serialise/deserialise database objects
   * directly from `JsObject` -> `DBObject`.
@@ -22,7 +23,7 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerialiser[T] with Spra
   override def deserialise(found: Object): T = implicitly[JsonFormat[T]].read(obj2js(found))
 }
 
-trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMarshalling {
+trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMarshalling with ObjectIdMarshalling {
   this: JavaLogging =>
 
   protected def js2db(jsValue: JsValue): Object = {
@@ -49,7 +50,8 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
         list
       case o: JsObject =>
         val fields = o.fields
-        if (fields.contains("$date")) o.convertTo[Date]
+        if (fields.contains("$date")) o.convertTo[DateTime]
+        else if (fields.contains("$oid")) o.convertTo[ObjectId]
         else if (fields.contains("$uuid")) o.convertTo[UUID]
         else new BasicDBObject(fields.map(f => (f._1, js2db(f._2))).toMap)
     }
@@ -68,13 +70,13 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
         JsObject(javaMap.map {
           f => (f._1, obj2js(f._2))
         } toMap)
-      case objId: ObjectId => JsString(objId.toString)
+      case objId: ObjectId => objId.toJson
       case s: java.lang.String => JsString(s)
       case b: java.lang.Boolean => JsBoolean(b)
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
       case d: java.lang.Double => JsNumber(d)
-      case date: java.util.Date => date.toJson
+      case date: DateTime => date.toJson
       case uuid: java.util.UUID => uuid.toJson
       case null => JsNull
       case unsupported =>

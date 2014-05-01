@@ -19,7 +19,7 @@ case class Student(id: Long,
 
 
 trait SprayJsonTestSupport extends MongoCrudTestAccess
-with DefaultJsonProtocol with UuidMarshalling with DateMarshalling with BigNumberMarshalling with JavaLogging {
+with DefaultJsonProtocol with UuidMarshalling with DateMarshalling with ObjectIdMarshalling with BigNumberMarshalling with JavaLogging {
   this: Specification =>
 
   implicit val PersonFormatter = jsonFormat3(Person)

@@ -3,14 +3,9 @@ import sbtrelease._
 /** Project */
 name := "Scalad"
 
-organization := "org.eigengo"
+organization := "com.sefaira"
 
 scalaVersion := "2.10.1"
-
-/** Shell */
-shellPrompt := { state => System.getProperty("user.name") + "> " }
-
-shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
 
 /** Dependencies */
 resolvers += "spray repo" at "http://repo.spray.io"
@@ -19,13 +14,11 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 resolvers += "Sonatype OSS Releases" at "http://oss.sonatype.org/content/repositories/releases/"
 
-publishTo <<= version { v: String =>
-  val nexus = "https://oss.sonatype.org/"
-  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else                             Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
-publishMavenStyle := true
+resolvers ++= Seq("Sefaira Repo" at "https://sefaira.artifactoryonline.com/sefaira/main-virtual-repo")
+
+publishTo := Some("releases" at "https://sefaira.artifactoryonline.com/sefaira/libs-local-ivy")
 
 publishArtifact in Test := false
 
@@ -58,9 +51,7 @@ pomExtra := (
   </developers>
 )
 
-credentials += Credentials(Path.userHome / ".sonatype")
-
-libraryDependencies <<= scalaVersion { scala_version => 
+libraryDependencies <<= scalaVersion { scala_version =>
     Seq(
         "com.github.fommil"    % "java-logging"        % "1.0",
         "com.typesafe.akka"    %% "akka-actor"         % "2.1.2",
@@ -68,6 +59,8 @@ libraryDependencies <<= scalaVersion { scala_version =>
         "org.mongodb"          % "mongo-java-driver"   % "2.10.1",
         "com.typesafe"         % "config"              % "1.0.0",
         "io.spray"             %% "spray-json"         % "1.2.3",
+        "org.joda"             %  "joda-convert"       % "1.2",
+        "joda-time"            % "joda-time"           % "2.3",
         "org.specs2"           %% "specs2"             % "1.13"   % "test",
         "org.scalacheck"       %% "scalacheck"         % "1.10.0" % "test"
     )
