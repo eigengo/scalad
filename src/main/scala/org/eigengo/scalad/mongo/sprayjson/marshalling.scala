@@ -4,6 +4,7 @@ import spray.json._
 import java.util.{UUID, Date}
 import java.net.URI
 import org.eigengo.scalad.mongo.UuidChecker
+import org.bson.types.ObjectId
 import org.joda.time.{DateTimeZone, DateTime}
 import org.joda.time.format.ISODateTimeFormat
 
@@ -51,6 +52,15 @@ trait BigNumberMarshalling {
     }
   }
 
+}
+
+trait ObjectIdMarshalling {
+  implicit object ObjectIdFormat extends BsonMarshalling[ObjectId] {
+    override val key = "$oid"
+
+    override def writeString(obj: ObjectId)= obj.toString
+    override def readString(value: String) = new ObjectId(value)
+  }
 }
 
 trait DateMarshalling {

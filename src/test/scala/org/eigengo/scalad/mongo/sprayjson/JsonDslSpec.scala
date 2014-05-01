@@ -2,10 +2,10 @@ package org.eigengo.scalad.mongo.sprayjson
 
 import spray.json._
 import org.specs2.mutable.Specification
+import org.bson.types.ObjectId
 import org.joda.time.{DateTimeZone, DateTime}
 
-class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarshalling with DateMarshalling {
-
+class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarshalling with DateMarshalling with ObjectIdMarshalling {
   import org.eigengo.scalad.mongo.sprayjson._
 
   sequential
@@ -47,8 +47,16 @@ class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarsha
       $(1, 2, 3) === JsonParser("[1,2,3]")
     }
 
+    "Correctly round-trips ObjectIds" in {
+      val oId = new ObjectId("53627de05ed0089ad3c1cdf9")
+      "id" :> oId === JsonParser("""{"id": { "$oid": "53627de05ed0089ad3c1cdf9" } }""")
+      JsonParser(oId.toJson.toString).convertTo[ObjectId] === oId
+    }
+
     "Correctly round-trips Dates" in {
-      "date" :> new DateTime("2001-1-1", DateTimeZone.UTC) === JsonParser("""{"date": { "$date": "2001-01-01T00:00:00.000Z" } }""")
+      val d = new DateTime("2001-1-1", DateTimeZone.UTC)
+      "date" :> d === JsonParser("""{"date": { "$date": "2001-01-01T00:00:00.000Z" } }""")
+      JsonParser(d.toJson.toString).convertTo[DateTime].withZone(DateTimeZone.UTC) === d
     }
 
     "Correctly handle combination of nested object and arrays" in {

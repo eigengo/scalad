@@ -23,7 +23,7 @@ class SprayJsonSerialisation[T: JsonFormat] extends MongoSerialiser[T] with Spra
   override def deserialise(found: Object): T = implicitly[JsonFormat[T]].read(obj2js(found))
 }
 
-trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMarshalling {
+trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMarshalling with ObjectIdMarshalling {
   this: JavaLogging =>
 
   protected def js2db(jsValue: JsValue): Object = {
@@ -51,6 +51,7 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
       case o: JsObject =>
         val fields = o.fields
         if (fields.contains("$date")) o.convertTo[DateTime]
+        else if (fields.contains("$oid")) o.convertTo[ObjectId]
         else if (fields.contains("$uuid")) o.convertTo[UUID]
         else new BasicDBObject(fields.map(f => (f._1, js2db(f._2))).toMap)
     }
@@ -69,7 +70,7 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
         JsObject(javaMap.map {
           f => (f._1, obj2js(f._2))
         } toMap)
-      case objId: ObjectId => JsString(objId.toString)
+      case objId: ObjectId => objId.toJson
       case s: java.lang.String => JsString(s)
       case b: java.lang.Boolean => JsBoolean(b)
       case i: java.lang.Integer => JsNumber(i)
