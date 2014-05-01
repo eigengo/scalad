@@ -12,8 +12,9 @@ trait MongoUpdate {
     val serialiser = implicitly[MongoSerialiser[T]]
     val id = implicitly[IdentityQueryBuilder[T]].createIdQuery(entity)
 
-    if (collection.findAndModify(id, serialiser serialiseDB entity) == null) None
-    else Some(entity)
+    val serialized = serialiser serialiseDB entity
+    if (collection.findAndModify(id, serialized) == null) None
+    else Some(serialiser deserialise serialized)
   }
 
   /** Find the old entry in the database by comparing it to the first parameter,
@@ -24,9 +25,10 @@ trait MongoUpdate {
     val query = implicitly[IdentityQueryBuilder[T]].createIdQuery(old)
     val existing = col.findOne(query)
     if (existing == null) return None
-    val updateDb = implicitly[MongoSerialiser[T]].serialiseDB(update)
-    if (col.update(existing, updateDb) == null) None
-    else Some(update)
+    val serialiser = implicitly[MongoSerialiser[T]]
+    val serialized = serialiser serialiseDB update
+    if (col.update(existing, serialized) == null) None
+    else Some(serialiser deserialise serialized)
   }
 
 }
