@@ -74,5 +74,9 @@ class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarsha
       "foo" :> null === JsonParser( """{"foo":null}""")
     }
 
+    "symbols are allowed for field names" in {
+      'foo :> 5 === JsonParser("""{"foo": 5}""")
+    }
+
   }
 }

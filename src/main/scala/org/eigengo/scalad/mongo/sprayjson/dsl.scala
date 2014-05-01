@@ -17,9 +17,13 @@ object `package` {
     cf.listFormat.write(elements.toList)
   }
 
-  implicit class JsObjectBuilder[V: JsonWriter](key: String) extends DefaultJsonProtocol {
+  implicit class string_JsObjectBuilder[V: JsonWriter](key: String) extends DefaultJsonProtocol {
     val writer = implicitly[JsonWriter[V]]
     def :>(that: V): JsObject = new JsObject(Map(key -> writer.write(that)))
+  }
+
+  implicit class symbol_JsObjectBuilder[V: JsonWriter](key: Symbol) extends DefaultJsonProtocol {
+    def :>(that: V): JsObject = key.name :> that
   }
 
   implicit class JsObjectMonoidalMappend(obj: JsObject) extends DefaultJsonProtocol {
