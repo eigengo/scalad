@@ -2,8 +2,9 @@ package org.eigengo.scalad.mongo.sprayjson
 
 import spray.json._
 import org.specs2.mutable.Specification
+import org.joda.time.{DateTimeZone, DateTime}
 
-class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarshalling {
+class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarshalling with DateMarshalling {
 
   import org.eigengo.scalad.mongo.sprayjson._
 
@@ -39,11 +40,15 @@ class JsonDslSpec extends Specification with DefaultJsonProtocol with NullMarsha
       ("foo" :> { "bar" :> 10 } <>
        "age" :> 45 <>
        "base" :> 50
-      ) === JsonParser( """{"foo":{"bar":10},"age":45}""")
+      ) === JsonParser( """{"foo":{"bar":10},"age":45,"base":50}""")
     }
 
     "correctly handle JSON arrays" in {
       $(1, 2, 3) === JsonParser("[1,2,3]")
+    }
+
+    "Correctly round-trips Dates" in {
+      "date" :> new DateTime("2001-1-1", DateTimeZone.UTC) === JsonParser("""{"date": { "$date": "2001-01-01T00:00:00.000Z" } }""")
     }
 
     "Correctly handle combination of nested object and arrays" in {

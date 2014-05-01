@@ -3,7 +3,9 @@ package org.eigengo.scalad.mongo.sprayjson
 import spray.json._
 import java.util.{UUID, Date}
 import java.net.URI
-import org.eigengo.scalad.mongo.{UuidChecker, IsoDateChecker}
+import org.eigengo.scalad.mongo.UuidChecker
+import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.format.ISODateTimeFormat
 
 /** Convenient implicit conversions */
 object BigNumberMarshalling {
@@ -53,18 +55,16 @@ trait BigNumberMarshalling {
 
 trait DateMarshalling {
 
-  implicit object DateJsonFormat extends BsonMarshalling[Date] with IsoDateChecker {
+  implicit object DateJsonFormat extends BsonMarshalling[DateTime] {
 
     override val key = "$date"
 
-    override def writeString(obj: Date) = dateToIsoString(obj)
+    override def writeString(obj: DateTime) = obj.withZone(DateTimeZone.UTC).toString
 
-    override def readString(value: String) = parseIsoDateString(value) match {
-      case None => deserializationError("Expected ISO Date format, got %s" format (value))
-      case Some(date) => date
-    }
+    override def readString(value: String) =
+      try { ISODateTimeFormat.dateTime().parseDateTime(value) }
+      catch { case e: IllegalArgumentException => deserializationError("Expected ISO Date format, got %s" format (value)) }
   }
-
 }
 
 /** [[scala.math.BigDecimal]] wrapper that is marshalled to `String`

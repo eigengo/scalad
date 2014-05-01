@@ -68,6 +68,7 @@ libraryDependencies <<= scalaVersion { scala_version =>
         "org.mongodb"          % "mongo-java-driver"   % "2.10.1",
         "com.typesafe"         % "config"              % "1.0.0",
         "io.spray"             %% "spray-json"         % "1.2.3",
+        "org.joda"             %  "joda-convert"       % "1.2",
         "joda-time"            % "joda-time"           % "2.3",
         "org.specs2"           %% "specs2"             % "1.13"   % "test",
         "org.scalacheck"       %% "scalacheck"         % "1.10.0" % "test"

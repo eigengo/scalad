@@ -3,7 +3,7 @@ package org.eigengo.scalad.mongo.sprayjson
 import spray.json._
 import scala._
 import com.mongodb.{BasicDBObject, BasicDBList}
-import java.util.{UUID, Date}
+import java.util.{UUID}
 import org.bson.types.ObjectId
 import org.eigengo.scalad.mongo.{UuidChecker, MongoSerialiser}
 import akka.contrib.jul.JavaLogging
@@ -75,7 +75,7 @@ trait SprayJsonConvertors extends UuidChecker with UuidMarshalling with DateMars
       case i: java.lang.Integer => JsNumber(i)
       case l: java.lang.Long => JsNumber(l)
       case d: java.lang.Double => JsNumber(d)
-      case date: java.util.Date => date.toJson
+      case date: DateTime => date.toJson
       case uuid: java.util.UUID => uuid.toJson
       case null => JsNull
       case unsupported =>
